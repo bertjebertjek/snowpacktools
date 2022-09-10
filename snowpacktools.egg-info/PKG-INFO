@@ -1,0 +1,22 @@
+Metadata-Version: 2.1
+Name: snowpacktools
+Version: 0.0.1
+Summary: Pre- and postprocessing tools of snowpack simulations.
+Home-page: https://gitlab.com/avalanche-warning/models/snowpack/snowpacktools
+Author: Avalanche Warning Service Tyrol
+Author-email: lawine@tirol.gv.at
+License: LGPL
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+This package is a selection of tools useful for pre- and postprocessing of snowpack simulations.
+
+# caaml
+
+# snowpro
+
+
