@@ -9,7 +9,6 @@ import sys
 import os
 import numpy as np
 from lxml import etree as et
-# import xml.etree.ElementTree as et
 
 def get_prof_metadata(file):
     '''Returns dictionary of relevant metadata for provided snowprofile.'''
@@ -77,7 +76,6 @@ def add_monti_density(file, new_file):
     xroot = tree.getroot()
     
     """Add density section"""
-    # children = xroot.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}snowProfileResultsOf')[0]
     child_snowProfileResultsOf = xroot.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}snowProfileResultsOf')
     child_SnowProfileMeasurements = child_snowProfileResultsOf.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}SnowProfileMeasurements')
     try:
