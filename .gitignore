@@ -1,6 +1,6 @@
 #general:
 .DS_Store
-# __pycache__
+__pycache__
 
 #auto-generated ini files:
 
