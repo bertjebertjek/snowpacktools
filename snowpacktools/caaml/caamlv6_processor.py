@@ -5,8 +5,6 @@
 # GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
-import sys
-import os
 import numpy as np
 from lxml import etree as et
 

@@ -4,5 +4,6 @@ __pycache__
 
 #auto-generated ini files:
 
-#output:
+#folders:
+data/
 output/

@@ -6,7 +6,6 @@ Home-page: https://gitlab.com/avalanche-warning/models/snowpack/snowpacktools
 Author: Avalanche Warning Service Tyrol
 Author-email: lawine@tirol.gv.at
 License: LGPL
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
@@ -18,5 +17,3 @@ This package is a selection of tools useful for pre- and postprocessing of snowp
 # caaml
 
 # snowpro
-
-

@@ -5,6 +5,10 @@ snowpacktools/__init__.py
 snowpacktools.egg-info/PKG-INFO
 snowpacktools.egg-info/SOURCES.txt
 snowpacktools.egg-info/dependency_links.txt
+snowpacktools.egg-info/requires.txt
 snowpacktools.egg-info/top_level.txt
 snowpacktools/caaml/__init__.py
 snowpacktools/caaml/caamlv6_processor.py
+snowpacktools/snowpro/__init__.py
+snowpacktools/snowpro/pro_helper.py
+snowpacktools/snowpro/snowpro.py
