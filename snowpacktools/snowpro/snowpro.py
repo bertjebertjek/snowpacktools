@@ -497,13 +497,25 @@ def snowpro(config_file,pro_file=None):
         pro_file (str):     Path to PRO file
     """
 
+    this_dir, this_filename = os.path.split(__file__)
+    latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
+    snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
+    if os.path.exists(latex_template_path):
+        plt.style.use(latex_template_path)
+
     config = configparser.ConfigParser()
-    config.read(config_file)
+    if os.path.exists(config_file): 
+        config.read(config_file)
+    else:
+        if os.path.exists(snowpro_template_ini_path): 
+            config.read(snowpro_template_ini_path)
+        else:
+            sys.exit('[E] No configuration file available')
 
     os.makedirs(config.get('SNOWPRO','OUTPUT_DIR'))
 
     if pro_file != None:
-        config['SNOWPRO','PRO_FILE_PATH'] = pro_file
+        config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
 
     if config.get('SNOWPRO','PLOT_SNP_EVO') =='TRUE':
         DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO','END_DATE')]
@@ -530,10 +542,7 @@ if __name__ == "__main__":
     debugpy.wait_for_client()
     print('Attached!')
     """
-
-    if os.path.exists('latex_template.mplstyle'):
-        plt.style.use('latex_template.mplstyle')
-
+    
     args = sys.argv[1:]
     if (os.path.isfile(args[0])):
         if len(args)>1: 
