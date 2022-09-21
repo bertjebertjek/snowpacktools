@@ -8,6 +8,9 @@
 import numpy as np
 from lxml import etree as et
 
+caaml_ns = "{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}"
+gml_ns = "{http://www.opengis.net/gml}"
+
 def get_prof_metadata(file):
     '''Returns dictionary of relevant metadata for provided snowprofile.'''
 
@@ -15,35 +18,35 @@ def get_prof_metadata(file):
     xroot = tree.getroot()
     
     """Altitude, location, aspect"""
-    child_locRef = xroot.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}locRef')
-    child_validElevation = child_locRef.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}validElevation')
-    child_ElevationPosition = child_validElevation.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}ElevationPosition')
-    child_position = child_ElevationPosition.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}position')
+    child_locRef = xroot.find(caaml_ns + 'locRef')
+    child_validElevation = child_locRef.find(caaml_ns + 'validElevation')
+    child_ElevationPosition = child_validElevation.find(caaml_ns + 'ElevationPosition')
+    child_position = child_ElevationPosition.find(caaml_ns + 'position')
     alt = float(child_position.text)
 
-    child_pointLocation = child_locRef.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}pointLocation')
-    child_Point = child_pointLocation.find('{http://www.opengis.net/gml}Point') # be careful with namespace (gml)
-    child_pos = child_Point.find('{http://www.opengis.net/gml}pos')
+    child_pointLocation = child_locRef.find(caaml_ns + 'pointLocation')
+    child_Point = child_pointLocation.find(gml_ns + 'Point') # be careful with namespace (gml)
+    child_pos = child_Point.find(gml_ns + 'pos')
     lon_lat = child_pos.text
 
     lon_lat = lon_lat.split(' ')
     lon= float(lon_lat[0])
     lat= float(lon_lat[1])
 
-    child_validAspect = child_locRef.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}validAspect')
-    child_AspectPosition = child_validAspect.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}AspectPosition')
-    child_positionA = child_AspectPosition.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}position')
+    child_validAspect = child_locRef.find(caaml_ns + 'validAspect')
+    child_AspectPosition = child_validAspect.find(caaml_ns + 'AspectPosition')
+    child_positionA = child_AspectPosition.find(caaml_ns + 'position')
     aspect = child_positionA.text
 
     """Date"""
-    child_timeRef = xroot.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}timeRef')
-    child_recordTime =  child_timeRef.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}recordTime')
-    child_TimeInstant = child_recordTime.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}TimeInstant')
-    child_timePosition = child_TimeInstant.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}timePosition')
+    child_timeRef = xroot.find(caaml_ns + 'timeRef')
+    child_recordTime =  child_timeRef.find(caaml_ns + 'recordTime')
+    child_TimeInstant = child_recordTime.find(caaml_ns + 'TimeInstant')
+    child_timePosition = child_TimeInstant.find(caaml_ns + 'timePosition')
     date = child_timePosition.text # string
 
     """Name"""
-    child_name = child_locRef.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}name')
+    child_name = child_locRef.find(caaml_ns + 'name')
     name = child_name.text
 
     prof_meta = {'lon'     : lon,
@@ -54,6 +57,33 @@ def get_prof_metadata(file):
                  'aspect'  : aspect}
 
     return prof_meta
+
+
+def add_snp_metadata(tree: object):
+    """Add relevant metadata to caaml file (section customData:snp)"""
+    
+    xroot = tree.getroot()
+
+    child_metaData                  = xroot.find(caaml_ns + "metaData")
+    child_customData                = child_metaData.find(caaml_ns + "customData")
+    child_snp                       = et.SubElement(child_customData,caaml_ns + 'snp')
+    child_CanopyHeight              = et.SubElement(child_snp,caaml_ns + 'CanopyHeight')
+    child_CanopyBasalArea           = et.SubElement(child_snp,caaml_ns + 'CanopyBasalArea')
+    child_CanopyLAI                 = et.SubElement(child_snp,caaml_ns + 'CanopyLAI')
+    child_CanopyDirectThroughfall   = et.SubElement(child_snp,caaml_ns + 'CanopyDirectThroughfall')
+    child_SoilAlb                   = et.SubElement(child_snp,caaml_ns + 'SoilAlb')
+    child_ErosionLevel              = et.SubElement(child_snp,caaml_ns + 'ErosionLevel')
+    child_CanopyHeight.set("uom","m")
+    child_CanopyBasalArea.set("uom","m^2")
+    
+    child_CanopyHeight.text             = "0.0"
+    child_CanopyBasalArea.text          = "0.0"
+    child_CanopyLAI.text                = "0.0"
+    child_CanopyDirectThroughfall.text  = "1.0"
+    child_SoilAlb.text                  = "0.2"
+    child_ErosionLevel.text             = "0.0"
+
+    return tree
 
 
 def add_monti_density(file, new_file):
@@ -69,46 +99,47 @@ def add_monti_density(file, new_file):
     Comments:
         - If density exists from observation or simulation it is removed
     '''
-    
+
     tree = et.parse(file)
+    tree = add_snp_metadata(tree)
     xroot = tree.getroot()
     
     """Add density section"""
-    child_snowProfileResultsOf = xroot.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}snowProfileResultsOf')
-    child_SnowProfileMeasurements = child_snowProfileResultsOf.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}SnowProfileMeasurements')
+    child_snowProfileResultsOf = xroot.find(caaml_ns + 'snowProfileResultsOf')
+    child_SnowProfileMeasurements = child_snowProfileResultsOf.find(caaml_ns + 'SnowProfileMeasurements')
     try:
-        child_densityProfile = child_SnowProfileMeasurements.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}densityProfile')
+        child_densityProfile = child_SnowProfileMeasurements.find(caaml_ns + 'densityProfile')
         child_SnowProfileMeasurements.remove(child_densityProfile)
     except:
         pass
-    child_densityProfile = et.SubElement(child_SnowProfileMeasurements, '{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}densityProfile')
-    child_densityMetaData = et.SubElement(child_densityProfile,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}densityMetaData')
-    child_methodOfMeas = et.SubElement(child_densityMetaData,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}methodOfMeas')
+    child_densityProfile = et.SubElement(child_SnowProfileMeasurements, caaml_ns + 'densityProfile')
+    child_densityMetaData = et.SubElement(child_densityProfile, caaml_ns + 'densityMetaData')
+    child_methodOfMeas = et.SubElement(child_densityMetaData, caaml_ns + 'methodOfMeas')
     child_methodOfMeas.text = 'other'
     
     """Add density layer for each steatigraphy layer"""
-    child_stratProfile = child_SnowProfileMeasurements.find('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}stratProfile')
-    for layer in child_stratProfile.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}Layer'):
-        child_densityLayer = et.SubElement(child_densityProfile,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}Layer')
-        child_depthTop  = et.SubElement(child_densityLayer,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}depthTop')
-        child_thickness = et.SubElement(child_densityLayer,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}thickness')
-        child_density   = et.SubElement(child_densityLayer,'{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}density')
+    child_stratProfile = child_SnowProfileMeasurements.find(caaml_ns + 'stratProfile')
+    for layer in child_stratProfile.iter(caaml_ns + 'Layer'):
+        child_densityLayer = et.SubElement(child_densityProfile, caaml_ns + 'Layer')
+        child_depthTop  = et.SubElement(child_densityLayer,caaml_ns + 'depthTop')
+        child_thickness = et.SubElement(child_densityLayer,caaml_ns + 'thickness')
+        child_density   = et.SubElement(child_densityLayer,caaml_ns + 'density')
 
         child_depthTop.set('uom', 'cm')
         child_thickness.set('uom', 'cm')
         child_density.set('uom', 'kgm-3')
     
-        for val_depth in layer.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}depthTop'):
+        for val_depth in layer.iter(caaml_ns + 'depthTop'):
             child_depthTop.text = val_depth.text
-        for val_thickness in layer.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}thickness'):
+        for val_thickness in layer.iter(caaml_ns + 'thickness'):
             child_thickness.text = val_thickness.text
         
         """Get grain forms and hardness to estimate density"""
-        for form in layer.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}grainFormPrimary'):
+        for form in layer.iter(caaml_ns + 'grainFormPrimary'):
             grainFormPrimary = form.text
-        for form in layer.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}grainFormSecondary'):
+        for form in layer.iter(caaml_ns + 'grainFormSecondary'):
             grainFormSecondary = form.text
-        for val_hardness in layer.iter('{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}hardness'):
+        for val_hardness in layer.iter(caaml_ns + 'hardness'):
             hardness = val_hardness.text
         
         child_density.text = str(_monti_density(grainFormPrimary, grainFormSecondary, hardness))
@@ -207,4 +238,4 @@ def _monti_density(form, form2, hardness_str):
 
 
 if __name__ == "__main__":
-    print("This script provides useful functions to process CAAMLv6 snow profiles")
+    print("This script provides useful functions to process CAAMLv6 snow profiles. Call them directly.")

@@ -483,7 +483,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
     fig.tight_layout()
     fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
-                format='png', dpi=150)
+                format='png', dpi=150, bbox_inches='tight')
 
     end_plotting = time.time()
     print('Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
@@ -512,7 +512,7 @@ def snowpro(config_file,pro_file=None):
         else:
             sys.exit('[E] No configuration file available')
 
-    os.makedirs(config.get('SNOWPRO','OUTPUT_DIR'))
+    os.makedirs(config.get('SNOWPRO','OUTPUT_DIR'), exist_ok=True)
 
     if pro_file != None:
         config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
@@ -542,13 +542,21 @@ if __name__ == "__main__":
     debugpy.wait_for_client()
     print('Attached!')
     """
-    
     args = sys.argv[1:]
-    if (os.path.isfile(args[0])):
-        if len(args)>1: 
-            snowpro(args[0],args[1])
+
+    this_dir, this_filename = os.path.split(__file__)
+    snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
+    if len(args) > 0: 
+        if (os.path.isfile(args[0])):
+            if len(args)>1: 
+                snowpro(args[0],args[1])
+            else:
+                snowpro(args[0])
         else:
-            snowpro(args[0])
+            name = str(args[0])
+            print('File ({}) not found.'.format(name))
     else:
-        name = str(args[0])
-        print('File ({}) not found.'.format(name))
+        if os.path.exists(snowpro_template_ini_path):
+            snowpro(snowpro_template_ini_path)
+        else:
+            sys.exit('[E] No configuration file available')
