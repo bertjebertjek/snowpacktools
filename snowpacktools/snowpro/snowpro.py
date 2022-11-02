@@ -489,7 +489,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     print('Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
 
 
-def snowpro(config_file=None, pro_file=None):
+def snowpro(config_file=None, pro_file=None, output_dir=None):
     """A SNOWPACK output (.pro file) visualization tool.
     
     Arguments:
@@ -499,11 +499,14 @@ def snowpro(config_file=None, pro_file=None):
 
     this_dir, this_filename = os.path.split(__file__)
     latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
+    if not output_dir:
+        output_dir = config.get('SNOWPRO','OUTPUT_DIR')
+    os.makedirs(output_dir, exist_ok=True)
     snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
     if os.path.exists(latex_template_path):
         plt.style.use(latex_template_path)
-
     config = configparser.ConfigParser()
+
     if config_file and os.path.exists(config_file):
         config.read(config_file)
     else:
@@ -512,14 +515,13 @@ def snowpro(config_file=None, pro_file=None):
         else:
             sys.exit('[E] No configuration file available')
 
-    os.makedirs(config.get('SNOWPRO','OUTPUT_DIR'), exist_ok=True)
 
     if pro_file != None:
         config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
 
     if config.get('SNOWPRO','PLOT_SNP_EVO') =='TRUE':
         DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO','END_DATE')]
-        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=config.get('SNOWPRO','OUTPUT_DIR'), var=config.get('SNOWPRO-EVO','VAR'), res=config.get('SNOWPRO-EVO','RESOLUTION'), 
+        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, var=config.get('SNOWPRO-EVO','VAR'), res=config.get('SNOWPRO-EVO','RESOLUTION'),
                         second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
     
     if config.get('SNOWPRO','PLOT_PROFILE')=='TRUE':
@@ -528,7 +530,7 @@ def snowpro(config_file=None, pro_file=None):
 
     if config.get('SNOWPRO', 'PLOT_SNP_EVO_AND_PROFILE')=='TRUE':
         DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO', 'END_DATE')]
-        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=config.get('SNOWPRO','OUTPUT_DIR'), DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-EVO', 'VAR'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), 
+        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-EVO', 'VAR'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), 
                         second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
         # plot_snp_evo(config.get('SNOWPRO','PRO_FILE'), DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-evo', 'VAR'), res=config.get('SNOWPRO-evo', 'RESOLUTION'), 
         #                 second_var='NONE', COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
