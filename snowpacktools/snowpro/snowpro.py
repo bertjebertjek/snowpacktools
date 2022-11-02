@@ -44,7 +44,7 @@ def read_pro(path,res='1h'):
     
     meta_dict = {}
     
-    """Open the PRO file and generate dict of variables with list of lines for each variable"""
+    # Open the PRO file and generate dict of variables with list of lines for each variable
     start_read_file = time.time()
     with open(path, "r") as f:
         file_content = f.readlines()
@@ -60,7 +60,7 @@ def read_pro(path,res='1h'):
             section = '[DATA]'
             timestamp_of_interest = False
 
-            """Drop variables that are not present in header of .PRO file"""
+            # Drop variables that are not present in header of .PRO file
             keys_to_drop = []
             for key in variables:
                 if len(variables[key]) == 0:
@@ -82,13 +82,13 @@ def read_pro(path,res='1h'):
 
         else:
             if line[:4] == '0500':
-                """Check that all variable lists are same length..."""
+                # Check that all variable lists are same length...
                 n = len(variables['date'])
                 for key in variables:
                     if (n-len(variables[key]))==1:
                         variables[key].append('-999')
 
-                """Check if timestamp is of interest"""
+                # Check if timestamp is of interest
                 if int(line[-8:-6]) in hours:
                     timestamp_of_interest=True
                     # Add line to variable
@@ -99,7 +99,7 @@ def read_pro(path,res='1h'):
             elif line[:4] in VAR_CODES and timestamp_of_interest:
                 variables[PRO_CODE_DICT[line[:4]]].append(line)
 
-    """Check again that all variable lists are same length... (for no snow at end of season)"""
+    # Check again that all variable lists are same length... (for no snow at end of season)
     n = len(variables['date'])
     for key in variables:
         if (n-len(variables[key]))==1:
@@ -108,14 +108,14 @@ def read_pro(path,res='1h'):
     end_read_file = time.time()
     print('Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
 
-    """Remove the header data (leave this, because it covers wrong user input with var_codes)"""
+    # Remove the header data (leave this, because it covers wrong user input with var_codes)
     for variable in variables.keys():
         try:
             variables[variable].pop(0)
         except:
             print('Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
 
-    """Check existence of soil layers (!exist for negative height values!)"""
+    # Check existence of soil layers (!exist for negative height values!)
     line_series = variables['height_m'][0].split(",")
     nvars = int(line_series[1])
     soil_vars     = []
@@ -134,11 +134,11 @@ def read_pro(path,res='1h'):
                         soil_vars.append(varname)
             print(soil_vars)
     
-    """Generate snow profile dataframe for each timestamp"""
+    # Generate snow profile dataframe for each timestamp
     start_processing = time.time()
     snowpro_list = [pro_helper.snowpro_from_snapshot(i, variables, i_ground_surf, soil_vars) for i in range(len(variables['date']))]
 
-    """Transform SLF graintype code into ICSSG standard abbreviation"""
+    # Transform SLF graintype code into ICSSG standard abbreviation
     for df in snowpro_list:
         df['graintype'] = df['grain type (Swiss Code F1F2F3)'].apply(pro_helper.slf_graintype_to_ICSSG)
 
@@ -159,7 +159,7 @@ def get_smet_df(path):
     df_smet = pd.read_csv(path, sep=" ", skiprows=18, skipinitialspace=True, names =var) 
     df_smet = df_smet.replace(-999.0, np.NaN)
 
-    """Reduce dataframe to variables of interest"""
+    # Reduce dataframe to variables of interest
     variables_of_intrest = ['timestamp', 'TSS_mod', 'TSS_meas', 'T_bottom' ,'TSG','VW','DW','wind_trans24','VW_drift', 'MS_Wind', 'HS_mod', 'HS_meas',
                         'MS_Snow','hoar_size', 'HN72_24','HN24','MS_Rain','SWE','MS_Water']
     df_smet = df_smet.loc[:, df_smet.columns.intersection(variables_of_intrest)]
@@ -187,7 +187,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
 
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
 
-    """Get closest profile of PRO file to DATETIME"""
+    # Get closest profile of PRO file to DATETIME
     DATETIME = pd.Timestamp(DATETIME_STR)
     for df in df_pro_list_temp:
         if df.date.iloc[0] == DATETIME:
@@ -222,7 +222,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     bar_plot_p = ax.barh(df['bottom'], ZERO_HH_VAL, height=df['thickness_m'], align='edge', color=cols, hatch=hatches)
         
 
-    """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
+    # COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)
     if fig!=None:
         lulu = np.zeros((n_bar,n_bar))
         for nn,k in enumerate(col_dict.keys()):
@@ -240,7 +240,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
         cbar = fig.colorbar(contf, format=fmt, ticks=tickz,location='left', pad=0.04) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar.ax.grid(visible=False)
 
-    """Temperature axis"""
+    # Temperature axis
     ax_t = ax.twiny()
     ax_t.plot(df['temperature'], df['height_m'], color='#DC143C',lw=1.5)
     ax_t.grid(visible=False)
@@ -250,7 +250,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     ax_t.tick_params(axis='x', colors='#DC143C')
     ax_t.set_xlim(min(df['temperature'])-2,0)
 
-    """AXES"""
+    # AXES
     XLIM = [-1100,50] 
     ax.set_xlim(XLIM)
     if fig!=None:
@@ -284,7 +284,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
 
     ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-    """Include Meta data in top left corner and save figure"""
+    # Include Meta data in top left corner and save figure
     if fig!=None:
         header_str = 'Location:      ' + meta_dict['StationName'] + ' (' + DATETIME_STR + ')\nElevation:     ' + meta_dict['Altitude'] + \
                     'm\nSlope Angle: ' + str(int(float(meta_dict['SlopeAngle']))) + '°\nAspect:         ' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
@@ -326,7 +326,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     end_readin = time.time()
     print('Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
 
-    """Filter for certain resolution and time frame"""
+    # Filter for certain resolution and time frame
     w, hours = pro_helper.set_resolution(res)
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
     RANGE_DICT = pro_helper.get_range_dict()
@@ -337,7 +337,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         # if (df.iloc[0].date.strftime('%m.%d') > season_start) or (df.iloc[0].dates.strftime('%m.%d') < season_end):
             df_pro_list.append(df)
 
-    """COLOR MAP AND PREPROCESSING"""
+    # COLOR MAP AND PREPROCESSING
     if var=='grain_type':
         col_dict_labels     = dict(zip(LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE))
         hatches_dict_labels = dict(zip(LABELS_GRAIN_TYPE, HATCHES_GRAIN_TYPE))
@@ -369,7 +369,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         clev_var2 = np.linspace(RANGE_DICT[second_var][0],RANGE_DICT[second_var][1],11)
         cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
-    """VISUALIZATION"""
+    # VISUALIZATION
     if DATETIME_STR==None:
         fig, ax = plt.subplots(1,1,figsize=(14,6))
     else:
@@ -398,17 +398,17 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
             cols2 = cmap_var2(var_data2)
             ax.bar(df.date[0], df['thickness_m'], width=w, bottom=df['bottom'], align='edge', color=cols2, alpha=0.8)
 
-    """Line along snow surface"""
+    # Line along snow surface
     if second_var!='NONE':
         # h_max = np.where(h_max == np.nan, 0, h_max)
         ax.plot(dates,h_max,ds='steps-post',lw=0.8,color='black', ls='--', alpha=0.67)
 
-    """Hardness profile to the right"""
+    # Hardness profile to the right
     if DATETIME_STR!=None:
         ax_prof = plot_single_profile(path_to_pro,DATETIME_STR,COLOR_SCHEME=COLOR_SCHEME,ax=ax_prof)
         ax.axvline(x=DATETIME_STR,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
 
-    """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
+    # COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)
     if second_var!='NONE':
          # - Colorbar for second layer - # 
         n_var = 9
@@ -449,7 +449,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         cbar.set_label(var)
         # cbar.set_label("SK38 / -")
     
-    """AXES""" 
+    # AXES 
     if DATE_RANGE[0] == 'NONE':
         ax.set_xlim(df_pro_list[0].date[0],df_pro_list[-1].date[0])
     else:
@@ -465,7 +465,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     # ax.xaxis.set_major_locator(###)
     ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-    """Include Meta data in top left corner and save figure"""
+    # Include Meta data in top left corner and save figure
     if DATETIME_STR!=None:
         meta_x = 0.13
         meta_y = 0.89
