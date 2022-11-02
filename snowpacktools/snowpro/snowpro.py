@@ -489,7 +489,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     print('Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
 
 
-def snowpro(config_file,pro_file=None):
+def snowpro(config_file=None, pro_file=None):
     """A SNOWPACK output (.pro file) visualization tool.
     
     Arguments:
@@ -504,7 +504,7 @@ def snowpro(config_file,pro_file=None):
         plt.style.use(latex_template_path)
 
     config = configparser.ConfigParser()
-    if os.path.exists(config_file): 
+    if config_file and os.path.exists(config_file):
         config.read(config_file)
     else:
         if os.path.exists(snowpro_template_ini_path): 
