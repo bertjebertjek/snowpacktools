@@ -478,7 +478,8 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     
     # --- Save figure --- #
     if DATETIME_STR==None:
-        fig_title = 'snp-evo-' + meta_dict['StationName'] + '.png'
+        fig_title = f'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
+        fig_title = 'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
     else:
         fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
     fig.tight_layout()
