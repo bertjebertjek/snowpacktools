@@ -500,6 +500,15 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
         pro_file (str):     Path to PRO file
     """
 
+    config = configparser.ConfigParser()
+    if config_file and os.path.exists(config_file):
+        config.read(config_file)
+    else:
+        if os.path.exists(snowpro_template_ini_path): 
+            config.read(snowpro_template_ini_path)
+        else:
+            sys.exit('[E] No configuration file available')
+            
     this_dir, this_filename = os.path.split(__file__)
     latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
     if not output_dir:
@@ -508,17 +517,7 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
     snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
     if os.path.exists(latex_template_path):
         plt.style.use(latex_template_path)
-    config = configparser.ConfigParser()
-
-    if config_file and os.path.exists(config_file):
-        config.read(config_file)
-    else:
-        if os.path.exists(snowpro_template_ini_path): 
-            config.read(snowpro_template_ini_path)
-        else:
-            sys.exit('[E] No configuration file available')
-
-
+        
     if pro_file != None:
         config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
 

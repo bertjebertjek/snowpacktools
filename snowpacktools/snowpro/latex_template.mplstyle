@@ -23,6 +23,9 @@ axes.linewidth : 1.25
 axes.facecolor : white
 
 # Ticks
+xtick.direction: in
+ytick.direction: in
+
 xtick.top : True
 xtick.bottom : True
 ytick.left : True
