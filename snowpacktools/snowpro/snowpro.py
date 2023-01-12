@@ -306,7 +306,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
         return ax
 
 
-def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2', DATE_RANGE=['NONE','NONE']):
+def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2', DATE_RANGE=['NONE','NONE'],output_name='NONE'):
     """Plots snowpack evolution (PRO-file). Different variables or grain type can be visualized and overlayed.
     
     Arguments:
@@ -478,11 +478,14 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
              verticalalignment='top', fontsize=10) # ma='left'
     
     # --- Save figure --- #
-    if DATETIME_STR==None:
-        fig_title = f'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
-        fig_title = 'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
+    if output_name == 'NONE':
+        if DATETIME_STR==None:
+            # fig_title = f'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
+            fig_title = 'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
+        else:
+            fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
     else:
-        fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
+        fig_title = 'snp-evo-' + output_name
     fig.tight_layout()
     print(f'[i] Saving figure "{fig_title}" to "{output_dir}".')
     fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
@@ -501,22 +504,32 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
     """
 
     config = configparser.ConfigParser()
+    this_dir, this_filename = os.path.split(__file__)
+    print(this_dir)
     if config_file and os.path.exists(config_file):
         config.read(config_file)
     else:
+        snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
         if os.path.exists(snowpro_template_ini_path): 
             config.read(snowpro_template_ini_path)
         else:
             sys.exit('[E] No configuration file available')
             
-    this_dir, this_filename = os.path.split(__file__)
     latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
+    print(latex_template_path)
+    if os.path.exists(latex_template_path):
+        print('USED')
+        plt.style.use(latex_template_path)
+
     if not output_dir:
         output_dir = config.get('SNOWPRO','OUTPUT_DIR')
     os.makedirs(output_dir, exist_ok=True)
-    snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
-    if os.path.exists(latex_template_path):
-        plt.style.use(latex_template_path)
+
+    """Output name for figures"""
+    try:
+        output_name = config.get('SNOWPRO', 'OUTPUT_NAME')
+    except:
+        output_name = 'NONE'
         
     if pro_file != None:
         config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
@@ -524,7 +537,7 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
     if config.get('SNOWPRO','PLOT_SNP_EVO') =='TRUE':
         DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO','END_DATE')]
         plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, var=config.get('SNOWPRO-EVO','VAR'), res=config.get('SNOWPRO-EVO','RESOLUTION'),
-                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
+                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE, output_name=output_name)
     
     if config.get('SNOWPRO','PLOT_PROFILE')=='TRUE':
         DATETIME = config.get('SNOWPRO-PROF', 'DATETIME')

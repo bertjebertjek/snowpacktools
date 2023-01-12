@@ -38,6 +38,11 @@ def get_prof_metadata(file):
     child_positionA = child_AspectPosition.find(caaml_ns + 'position')
     aspect = child_positionA.text
 
+    child_validSlopeAngle = child_locRef.find(caaml_ns + 'validSlopeAngle')
+    child_SlopeAnglePosition = child_validSlopeAngle.find(caaml_ns + 'SlopeAnglePosition')
+    child_position_angle = child_SlopeAnglePosition.find(caaml_ns + 'position')
+    slope_angle = int(child_position_angle.text)
+
     """Date"""
     child_timeRef = xroot.find(caaml_ns + 'timeRef')
     child_recordTime =  child_timeRef.find(caaml_ns + 'recordTime')
@@ -49,12 +54,13 @@ def get_prof_metadata(file):
     child_name = child_locRef.find(caaml_ns + 'name')
     name = child_name.text
 
-    prof_meta = {'lon'     : lon,
-                 'lat'     : lat,
-                 'alt'     : alt,
-                 'datetime': date,
-                 'name'    : name,
-                 'aspect'  : aspect}
+    prof_meta = {'lon'        : lon,
+                 'lat'        : lat,
+                 'alt'        : alt,
+                 'datetime'   : date,
+                 'name'       : name,
+                 'aspect'     : aspect,
+                 'slope_angle': slope_angle}
 
     return prof_meta
 
