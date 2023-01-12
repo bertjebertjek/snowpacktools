@@ -505,7 +505,6 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
 
     config = configparser.ConfigParser()
     this_dir, this_filename = os.path.split(__file__)
-    print(this_dir)
     if config_file and os.path.exists(config_file):
         config.read(config_file)
     else:
@@ -516,7 +515,6 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
             sys.exit('[E] No configuration file available')
             
     latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
-    print(latex_template_path)
     if os.path.exists(latex_template_path):
         print('USED')
         plt.style.use(latex_template_path)
