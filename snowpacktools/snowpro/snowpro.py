@@ -516,7 +516,6 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
             
     latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
     if os.path.exists(latex_template_path):
-        print('USED')
         plt.style.use(latex_template_path)
 
     if not output_dir:
