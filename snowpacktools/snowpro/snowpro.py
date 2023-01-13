@@ -485,7 +485,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         else:
             fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
     else:
-        fig_title = 'snp-evo-' + output_name
+        fig_title = output_name
     fig.tight_layout()
     print(f'[i] Saving figure "{fig_title}" to "{output_dir}".')
     fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
