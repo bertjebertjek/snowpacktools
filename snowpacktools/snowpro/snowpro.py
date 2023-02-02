@@ -413,7 +413,6 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     # Hardness profile to the right
     if DATETIME_STR!=None:
         ax_prof, DATETIME_STR = plot_single_profile(path_to_pro,DATETIME_STR,COLOR_SCHEME=COLOR_SCHEME,ax=ax_prof)
-        print(DATETIME_STR)
         datetime_format = '%Y-%m-%dT%Hh%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
         ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
