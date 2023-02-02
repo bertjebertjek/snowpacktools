@@ -190,10 +190,12 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
 
     # Get closest profile of PRO file to DATETIME
     date_found = 0
-    datetime_format = '%Y-%m-%dT%Hh%M'
+    datetime_format  = '%Y-%m-%dT%Hh%M'
+    datetime_format2 = '%Y-%m-%dT%Hh'
     for df in df_pro_list_temp:
-        if datetime.strftime(df.date.iloc[0], datetime_format) == DATETIME_STR:
+        if datetime.strftime(df.date.iloc[0], datetime_format2) == DATETIME_STR[0:-2]:
             print('Snow profile found for', DATETIME_STR)
+            DATETIME_STR = datetime.strftime(df.date.iloc[0], datetime_format)
             date_found = 1
             # - Use df from now on - # 
             break
