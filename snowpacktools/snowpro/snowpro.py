@@ -542,8 +542,8 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
 
     if config.get('SNOWPRO', 'PLOT_SNP_EVO_AND_PROFILE')=='TRUE':
         DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO', 'END_DATE')]
-        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-EVO', 'VAR'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), 
-                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
+        plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, DATETIME_STR=config.get('SNOWPRO-PROF','DATETIME'), var=config.get('SNOWPRO-EVO', 'VAR'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), 
+                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE, output_name=output_name)
         # plot_snp_evo(config.get('SNOWPRO','PRO_FILE'), DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-evo', 'VAR'), res=config.get('SNOWPRO-evo', 'RESOLUTION'), 
         #                 second_var='NONE', COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
 
