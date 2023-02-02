@@ -189,16 +189,15 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
 
     # Get closest profile of PRO file to DATETIME
-    DATETIME = pd.Timestamp(DATETIME_STR)
     date_found = 0
+    datetime_format = '%Y-%m-%dT%Hh%M'
     for df in df_pro_list_temp:
-        if df.date.iloc[0] == DATETIME:
-            print('Snow profile found for', DATETIME)
+        if datetime.strftime(df.date.iloc[0], datetime_format) == DATETIME_STR:
+            print('Snow profile found for', DATETIME_STR)
             date_found = 1
             # - Use df from now on - # 
             break
     if date_found==0:
-        datetime_format = '%Y-%m-%dT%Hh%M'
         DATETIME_STR = datetime.strftime(df.date.iloc[0], datetime_format)
 
     hand_hardness_dict = pro_helper.get_hand_hardness_N_dict()
