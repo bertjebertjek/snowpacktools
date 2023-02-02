@@ -13,6 +13,7 @@ import configparser
 import numpy as np
 import pandas as pd
 import xarray # needed for time axis
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
@@ -189,11 +190,16 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
 
     # Get closest profile of PRO file to DATETIME
     DATETIME = pd.Timestamp(DATETIME_STR)
+    date_found = 0
     for df in df_pro_list_temp:
         if df.date.iloc[0] == DATETIME:
             print('Snow profile found for', DATETIME)
+            date_found = 1
             # - Use df from now on - # 
             break
+    if date_found==0:
+        datetime_format = '%Y-%m-%dT%Hh%M'
+        DATETIME_STR = datetime.strftime(df.date.iloc[0], datetime_format)
 
     hand_hardness_dict = pro_helper.get_hand_hardness_N_dict()
     df['hand_hardness_N'] = df['hand hardness']
@@ -303,7 +309,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     else:
         ax.text(0.04,0.93,DATETIME_STR,horizontalalignment='left',
                 verticalalignment='top', fontsize=10, transform=ax.transAxes) # ma='left'
-        return ax
+        return ax, DATETIME_STR
 
 
 def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2', DATE_RANGE=['NONE','NONE'],output_name='NONE'):
@@ -406,8 +412,11 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
 
     # Hardness profile to the right
     if DATETIME_STR!=None:
-        ax_prof = plot_single_profile(path_to_pro,DATETIME_STR,COLOR_SCHEME=COLOR_SCHEME,ax=ax_prof)
-        ax.axvline(x=DATETIME_STR,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
+        ax_prof, DATETIME_STR = plot_single_profile(path_to_pro,DATETIME_STR,COLOR_SCHEME=COLOR_SCHEME,ax=ax_prof)
+        print(DATETIME_STR)
+        datetime_format = '%Y-%m-%dT%Hh%M'
+        time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
+        ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
 
     # COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)
     if second_var!='NONE':
