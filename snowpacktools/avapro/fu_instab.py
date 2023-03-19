@@ -1,13 +1,22 @@
+################################################################################
+# Copyright 2022 Avalanche Warning Service Tyrol                               #
+################################################################################
+# This is free software you can redistribute/modify under the terms of the     #
+# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
+################################################################################
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from math import e
-import datetime
-from fu_tau_p_CoJ15 import fu_tau_p_CoJ15
-from dateutil.relativedelta import relativedelta
-import get_s_rb15_v2 as pro_rb15
-import get_ac_vh16_v2 as pro_vh16
 
+# from math import e
+import datetime
+from dateutil.relativedelta import relativedelta
+
+import matplotlib.pyplot as plt
+
+from snowpacktools.avapro import get_s_rb15_v2 as pro_rb15
+from snowpacktools.avapro import get_ac_vh16_v2 as pro_vh16
+from snowpacktools.avapro import fu_tau_p_CoJ15
 
 # laws and constants:
 ini_rc = 0.2
@@ -37,15 +46,15 @@ threshprecstab = 2.7 #  %critical value for natural stability (see ConwayWilbur9
 
 
 def aggregate_layers(hh, rho_, trsh, plotit=0, mute=0):
-  #''''
-  #function to aggregate layers
-  #layers with a difference between them which is smaller than the threshold are averaged and 
-  #aggregated into one layer, hence reducing the number of layers
-  #INPUT:
-  #    h: thickness
-  #    rho: density
-  #    trsh: threshold (def: .1 would be 10%)
-  #''''
+    """ Function to aggregate layers
+    - Layers with a difference between them which is smaller than the threshold are averaged and 
+    aggregated into one layer, hence reducing the number of layers
+    - INPUT:
+        h: thickness
+        rho: density
+        trsh: threshold (def: .1 would be 10%)
+    """
+
     if not mute :
         print ('--- Entering aggregate_layers ---')
         print ('averaging densities up to ', str(trsh*100),' difference')
@@ -58,7 +67,7 @@ def aggregate_layers(hh, rho_, trsh, plotit=0, mute=0):
     # % ct=1; matlab code relict line 21
 
     while len(idn)> 2 :
-       #for kk = 1; matlabrelict line 23
+        #for kk = 1; matlabrelict line 23
         # %     disp([num2str(ct),'. ','agg: ',num2str(id(1))])
         yy[idn[0]] = (yy[idn[0]] * xx[idn[0]] + yy[idn[0]+1]* xx[idn[0]+1]) / \
                         (xx[idn[0]] + xx[idn[0]+1])
@@ -87,22 +96,22 @@ def aggregate_layers(hh, rho_, trsh, plotit=0, mute=0):
     
     return xx, yy
 
-def sig_dens(hrs):
-    sig_dens = 265 * (1+hrs/24) ** strexpLT 
-    return sig_dens
+# def sig_dens(hrs):
+#     sig_dens = 265 * (1+hrs/24) ** strexpLT 
+#     return sig_dens
+
 
 def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0 ):
-    #%% strength and natural stability evolution after burial
-    #% - strength fluctuations with natural precipitation loading (see ST and LT)
-    #% - stability after Conway and Wilbur 99 (CRST)
-    #% calculate precipitation stability index (eq.6): 
-    #%   WLshearstrength / load due to precipitation 
-    #% derive expected time to failure (eq.7):
-    #%   ( precstab - threshprecstab )./ (d precstab / d t)
-    #% need to get times with continuous snowfall - this is when strengthening occurs
-    #%   e.g. estimate from SC model data
-    #% all evaluation in hours
-    
+    """strength and natural stability evolution after burial
+    - strength fluctuations with natural precipitation loading (see ST and LT)
+    - stability after Conway and Wilbur 99 (CRST)
+    - calculate precipitation stability index (eq.6): WLshearstrength / load due to precipitation 
+    - derive expected time to failure (eq.7):
+    ( precstab - threshprecstab )./ (d precstab / d t)
+    need to get times with continuous snowfall - this is when strengthening occurs (e.g. estimate from SC model data)
+    - all evaluation in hours
+    """
+
     strexpLT = .62 #strength increase exponent for long-term evolution (0.18 from ConlanJamieson15; .63 from Jürg's shear frame data)
     strexpST = .62 #strength increase exponent for short-term, SHOULD DEPEND ON NORMAL LOAD (Szabo and Schneebo, 07)
 
@@ -117,12 +126,10 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
     iva = smoprecstr[0]
     if np.isnan(iva): # catch nan problem for comparison below
         iva = 0
-    
-    
-    #####
 
-    
-    
+
+    ############## INITIALIZATION WITH RTA IS EFFECTED HERE ##############
+
     for mm in range (1,len(smoprecstr)):
         if smoprecstr[mm] > (iva*1.001): # %watch out, "smooth" makes a tiny increase at the end of the array, so use greater 100.1%
             consno[mm]=consno[mm-1]+1  #% signif. snowfall since last timestep
@@ -130,7 +137,7 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
             if consno[mm-1] > 0 :   #% no signif. snowfall since last timestep
                 consno[mm]=consno[mm-1] - 1/4   #%2: time after snowfall during which strength decreases with dampexp towards longterm trend
         iva = smoprecstr[mm]
-        
+    
     consno = consno * scmodstep # %hours with continuous snowfall    
     #% sigLT: long-term strength evolution: SLOW matlab relikt
     #% sig_ini=@(xx)(18.5*1e3*(xx/917).^2.11);   % strength for persistent after JaJo01 
@@ -154,9 +161,12 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
     sig = sigLT * rrr           #% strength, the sum of LT and ST contribution
     sigST =sigLT * (1-rrr)       #% short-term contribution
     
-    #% Stability metrics
-    precstab = sig / precstr    # precipitation stability index  ConwayWilbur99 eq 6
-    extm2fail = (precstab-1) / np.append(np.NaN, np.abs(np.diff(precstab))) 
+    ### Stability metrics
+    ### precstab = precipitation stability index  ConwayWilbur99 eq 6
+    precstab = sig / precstr
+    ### Filter out 'inf' values and replace them with np.nan
+    precstab = np.where(precstab==np.inf,np.nan,precstab)
+    extm2fail = (precstab-1) / np.append(np.NaN, np.abs(np.diff(precstab)))
     extm2fail[extm2fail == 0] = np.NaN
 
     if plotit:
@@ -188,9 +198,9 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
 
         fig.tight_layout()
         plt.show()
-          
-    #% MAKE sure tm has at least24 entries
-    #%  TABLE for sorting: time; precipitation stability index; expected time to failure 
+    
+    ### Make sure tm has at least24 entries
+    ### Table for sorting: time; precipitation stability index; expected time to failure 
     KKK = np.vstack((timewindow,precstab,extm2fail)).T
     if len(KKK) <=24:# %need at least 24 entries
         KKK = np.concatenate((np.full((24-len(KKK), 3), np.nan), KKK), axis=0) 
@@ -206,7 +216,8 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
 
 
 def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pap',pre_existing = False ,calcFEM=0,overwrite_scmod_strength=0, winddrift = False, dap_nr = False):
-        
+    """Calculate instability of snowprofile
+    """
     if WLopt == 'pap':
         WLup =  df_P['papup'][index] # 'papup'
         burialdate = df_P['papburial'][index] #'papburial'
@@ -226,7 +237,7 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
         c_0 = df_P['dapINI_c_0'][index-1][dap_nr]
         
     else:
-        print(' WL opt not implemented jet- handling if pap,nap,...')
+        print('[E]  WL opt not implemented jet -> handling if pap,nap,...')
     if winddrift :
         burialdate=  df_P['dy'][index] #'dy'        
 
@@ -251,19 +262,14 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
             'thickness_m': drft,
             'graintype': [['RG', 'RG', 'dry']], 
             'lwc': 0
-            
         }
-
         df_prof = pd.concat([pd.DataFrame(slab_prop), df_prof], ignore_index=True)
         ind = 1
-
     else:
-        # WL exists in snow cover model output #ind=find(BB.po==WLup);  %WL position
+        ### WL exists in snow cover model output #ind=find(BB.po==WLup);  %WL position
         ind = df_prof.index[df_prof[po]== WLup].values[0]
         
-    # aggregate layers
-    
-
+    """Aggregate layers"""
     trsh = .2 # % def: .1, i.e. aggregates if density difference below 10% 
     H, D = aggregate_layers(df_prof[h].iloc[0:(ind)] * np.cos(alp*np.pi/180),df_prof[rho].iloc[0:(ind)], trsh, plotit=0,mute=1) # %last args: plotit, mute
     H_const = pd.Series([0.005,0.4]) 
@@ -272,11 +278,11 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
                                              / np.sum( df_prof[h].iloc[ind+1:-2] *  np.cos(alp+np.pi/180))  ] )
     D = pd.concat([D,D_const])
     
-    ## slab layer prop
+    ### Slab layer prop
     E = Ela(D)
     TS = TSjj(D)
 
-    ## 'average' slab properties
+    ### 'average' slab properties
     rhoslab = np.sum(df_prof[h].iloc[0:ind]* df_prof[rho].iloc[0:ind]) \
                 / np.sum(df_prof[h].iloc[0:ind])
     hslab = np.sum(df_prof[h].iloc[0:ind+1]) #%THICKNESS
@@ -289,7 +295,7 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
         Eslab = np.sum(H[0:-2]*E[0:-2]) / np.sum(H[0:-2])
         # Monti's expression: skierloadE
     
-    #%% WL properties
+    """WL properties"""
     rhowl = df_prof[rho].iloc[ind]
     
     if overwrite_scmod_strength:
@@ -305,11 +311,10 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
    
     #% wftemporal=CERR(ini_rc,tau_p,Ela(rhowl)); % if no FEM for bulk modulus, could use WL modulus MATLAB relikt
     
-
-# %% DAMAGE
-    #% calculate spontaneous release, if nap or pap/dap with new snow or rain
-    #% Conway and Wilbur 1999, Snow Ava Form 2003, Capelli?, Reuter TCD
-    #% burialdate='20141217'; dy='20150104'; %20160108
+    """DAMAGE (natural release)"""
+    ### calculate spontaneous release, if nap or pap/dap with new snow or rain
+    ### Conway and Wilbur 1999, Snow Ava Form 2003, Capelli?, Reuter TCD
+    ### burialdate='20141217'; dy='20150104'; %20160108
     if WLopt!='dap':
         if burialdate != pd.Timestamp('1970-01-01'):
             burial_stamp = pd.to_datetime(burialdate).replace(hour=0) # date of burial
@@ -325,9 +330,8 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
             mask_2 =  (df_met.timestamp <= current_stamp)
             precrat = df_met.MS_Snow.loc[mask_1 & mask_2] # % snp: [smet. solid prec]=kg/m2/h
                 
-        # % get natural instability due to precipitation
-            # buh is spaceholder for not needed returned variables
-  
+            ### Get natural instability due to precipitation
+            ### 'buh' is spaceholder for not needed returned variables
             precstabMIN24,extm2failMIN24,tmcrit,buh,buh,buh,buh,buh,buh,buh = fu_precstabindx( burialdate, tm, precrat, scmodstep, alp)
         else:
             #% Stability metrics
@@ -347,16 +351,16 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
         extm2failMIN24 = np.nan
         tmcrit         = np.nan
 
-##### %% natural stability index
-    Sn = tau_p / tau_g;
+    ### Natural stability index Sn
+    Sn = tau_p / tau_g
 
-#%% INITIATION
-#% calc initiation criterion, provide data for slab, weak layer and basal layer
+    """INITIATION"""
+    ### Calc initiation criterion, provide data for slab, weak layer and basal layer
     msswl,skierloadE,equiHslab,mssANA = pro_rb15.get_S_rb15_v2(H,D,E,tau_p,alp,1,calcFEM)
     Sk_ana = tau_p / (tau_g + mssANA);  #% McClung & Sz 99, Monti etal 16
     Sk_fem = tau_p / (tau_g + msswl) ;   #% Rb & Sz 18 GRL append. 
 
-#% skier stability index at a slope (estimate deltatauxy, otherwise use get_S_rb15.m)
+    ### Skier stability index (Sk38) at a slope (estimate deltatauxy, otherwise use get_S_rb15.m)
     angle = [30,35,38]
     angle_ind = []
     for element in angle:
@@ -373,30 +377,27 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
         deltau=150 / (hslab / np.cos(alp*np.pi()/180)) # short for alp 35 and lineload 500N/m (Schweizer internal report says H is thickness, but it is height, so correct with cos!)
 
     Sk = tau_p / (tau_g + deltau)#; % Sz internal repor
-#%% PROPAGATION
-#% calc crit crack length
-    
+
+    """PROPAGATION"""
+    ### Calc critical crack length
     ac_vh16,wf,ac_si06,ac_ga17 = pro_vh16.get_ac_vh16_v2(Eslab, rhoslab, hslab, wf, alp, rho_wl=rhowl,tau_p=tau_p)
 
-#%% SLAB SUPPORT AND SUSTAINED (DYNAMIC) PROPAGATION ?
-#% calc tensile support of the slab
-    
+
+    """CHECK FOR SLAB SUPPORT AND SUSTAINED (DYNAMIC) PROPAGATION"""
+    ### Calc tensile support of the slab
     if calcFEM == 1:
-        print('FEM batch not implemented')
+        print('[I]  FEM batch not implemented')
         #  [tcr,tenscrit,slablaythick]=get_ts_rb17(H(1:end-2),D,E,TS,Ltot,alp,rc); % check threshold for critical in the routine
-    # no opperation for calcFEM = 0
     
-#% analytic solution
-#% Is the fracture speed an indicator for sustained propagation?
+    ### Analytic solution 
+    ### Is the fracture speed an indicator for sustained propagation?
 
-
-#%% OUTPUT
+    """Prepare output of fu_instab()"""
     DAM=np.array([Sn,precstabMIN24,extm2failMIN24,tmcrit])
     INI = np.array([tau_p, c_0, Sk, Sk_ana, mssANA, Sk_fem, msswl,sigma_g])
     PRO=np.array([ac_si06, ac_vh16, wf, ac_ga17])
     #PRO=[ac_vh16, wf];
     DYN=tcr
-#% disp(['INI S: ',num2str(tau_p/mssANA)])
-#% disp(['PRO ac: ',num2str(ac_vh16)])
-
+    # disp(['INI S: ',num2str(tau_p/mssANA)])
+    # disp(['PRO ac: ',num2str(ac_vh16)])
     return DAM,INI, DYN, PRO

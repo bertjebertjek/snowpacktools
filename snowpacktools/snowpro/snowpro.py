@@ -65,7 +65,7 @@ def read_pro(path,res='1h'):
             keys_to_drop = []
             for key in variables:
                 if len(variables[key]) == 0:
-                    print('Variable ', key, ' is not found in the header of this .PRO file. It is dropped.')
+                    print('[I]  Variable ', key, ' is not found in the header of this .PRO file. It is dropped.')
                     keys_to_drop.append(key)
             
             for key in keys_to_drop:
@@ -107,14 +107,14 @@ def read_pro(path,res='1h'):
             variables[key].append('-999')
 
     end_read_file = time.time()
-    print('Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
+    print('[I]  Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
 
     # Remove the header data (leave this, because it covers wrong user input with var_codes)
     for variable in variables.keys():
         try:
             variables[variable].pop(0)
         except:
-            print('Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
+            print('[I]  Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
 
     # Check existence of soil layers (!exist for negative height values!)
     line_series = variables['height_m'][0].split(",")
@@ -125,7 +125,7 @@ def read_pro(path,res='1h'):
         datapoints = line_series[-nvars:]
         datapoints = list(map(float, datapoints))
         if datapoints[0] < 0:
-            print('Soil layers detected. The following variables contain values for soil:')
+            print('[I]  Soil layers detected. The following variables contain values for soil:')
             i_ground_surf = datapoints.index(0.0)
             for varname in variables.keys():
                 if varname != 'date':
@@ -147,7 +147,7 @@ def read_pro(path,res='1h'):
         df['bottom'] = 0
         df.loc[i,'bottom'] = df.loc[i+1,'height_m'].values
     end_processing = time.time()
-    print('Generation of dataframes took: {}s'.format(int(end_processing-start_processing)))
+    print('[I]  Generation of dataframes took: {}s'.format(int(end_processing-start_processing)))
 
     return snowpro_list, meta_dict
 
@@ -184,7 +184,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     start_readin = time.time()
     df_pro_list_temp, meta_dict = read_pro(path_to_pro)
     end_readin = time.time()
-    print('Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
+    print('[I]  Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
 
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
 
@@ -194,7 +194,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     datetime_format2 = '%Y-%m-%dT%Hh'
     for df in df_pro_list_temp:
         if datetime.strftime(df.date.iloc[0], datetime_format2) == DATETIME_STR[0:-2]:
-            print('Snow profile found for', DATETIME_STR)
+            print('[I]  Snow profile found for', DATETIME_STR)
             DATETIME_STR = datetime.strftime(df.date.iloc[0], datetime_format)
             date_found = 1
             # - Use df from now on - # 
@@ -306,7 +306,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
                     format='png', dpi=150)
 
         end_plotting = time.time()
-        print('Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
+        print('[I]  Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
     else:
         ax.text(0.04,0.93,DATETIME_STR,horizontalalignment='left',
                 verticalalignment='top', fontsize=10, transform=ax.transAxes) # ma='left'
@@ -501,7 +501,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
                 format='png', dpi=150, bbox_inches='tight')
 
     end_plotting = time.time()
-    print('Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
+    print('[I]  Visualization of snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
 
 
 def snowpro(config_file=None, pro_file=None, output_dir=None):
@@ -577,9 +577,9 @@ if __name__ == "__main__":
                 snowpro(args[0])
         else:
             name = str(args[0])
-            print('File ({}) not found.'.format(name))
+            print('[E]   File ({}) not found.'.format(name))
     else:
         if os.path.exists(snowpro_template_ini_path):
             snowpro(snowpro_template_ini_path)
         else:
-            sys.exit('[E] No configuration file available')
+            sys.exit('[E]   No configuration file available')

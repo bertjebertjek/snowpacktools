@@ -11,10 +11,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from math import e
 import datetime
-from fu_tau_p_CoJ15 import fu_tau_p_CoJ15
 from dateutil.relativedelta import relativedelta
-import get_s_rb15_v2 as pro_rb15
 import sympy as sym
+
+from snowpacktools.avapro import fu_tau_p_CoJ15
+from snowpacktools.avapro import get_s_rb15_v2 as pro_rb15
 
 # laws and constants:
 
