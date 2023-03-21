@@ -12,6 +12,7 @@
 import pickle
 import numpy as np
 import pandas as pd
+import datetime
 
 from snowpacktools.avapro import fu_instab as pro_instab
 from snowpacktools.avapro import fu_tau_p_CoJ15 as fu_tau_p_CoJ15
@@ -801,7 +802,7 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                 b = np.argmax(df_P['dapINI_tau_p'][index][ind_arg:ind_arg+2])
                 ind_arg = ind_arg + b      
                 df_P.loc[index,'dapup'][ind_arg] = np.NaN #% that means dropping, see ifloop
-                print('[D]    Drop DAP', index)
+                if debug: print('[D]    Drop DAP', index)
         if outputDAP !=0:
             print('[D]    Implement matlab line 254')
     
@@ -968,7 +969,7 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
 
                 # get exact position of WL (uppermost persist. layer in window)
                 df_P.loc[index, 'papburial'] = df_met_red.timestamp.iloc[ind_dry] # ???
-                df_P.loc[index,'papup'] = df_prof[po][((idx-1 + id_p[id_p == True].index[0]))] #
+                df_P.loc[index, 'papup'] = df_prof[po][((idx-1 + id_p[id_p == True].index[0]))] #
                 df_P.loc[index, 'paplo'] = df_prof[po][((idx-1 + id_p[id_p == True].index[0])) + 1]
                 df_P.loc[index, 'papgt'][:] =  df_prof.graintype[((idx-1 + id_p[id_p == True].index[0]))]
                 df_P.loc[index, 'papSLdep'] = df_prof[po][0] - df_P.papup[index]
@@ -1030,7 +1031,7 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
                 h = 'thickness_m' 
 
                 df_P.loc[index,'napSLrho'] =  sum( df_prof[rho][0:idx+1]* df_prof[h][0:idx+1]) / \
-                                        sum(df_prof[h][0:idx+1])
+                                              sum(df_prof[h][0:idx+1])
                 df_P.loc[index,'napWLrho'] = df_prof['density'][idx]
                 df_P.loc[index,'napex'] = 1 # %label non-persistent
                 
@@ -1041,7 +1042,7 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
                     df_P.loc[index,'napcalc'] = 1
                     DAM,INI,DYN,PRO  = pro_instab.fu_instab(index, df_prof, df_P, df_met, WLopt='nap')
                     df_P.loc[index,'napDAM_Sn'] = DAM[0] # natural stability index
-                    df_P.loc[index, 'napDAM_precstabMIN24'] = DAM[1]
+                    df_P.loc[index,'napDAM_precstabMIN24'] = DAM[1]
                     df_P.loc[index,'napDAM_extm2failMIN24'] = DAM[2]
                     df_P.loc[index,'napDAM_tmcrit'] = DAM[3]                            
                         
@@ -1067,9 +1068,12 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
                     tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P,  WLopt ='nap', opt = 'nonper') # %initial values defined there
                     df_P.loc[index,'napINI_tau_p']  = tau_p
                     df_P.loc[index,'napINI_c_0']  = c_0
-        ### matlab line 401        
+        
+        """Wind only case"""
+        ### Matlab line 401
+        ### Always considered. Also when surface does not change     
         if df_P.napcalc[index] != 1 and df_P.drft.iloc[index] > drftthrsh:
-            """Wind only case"""
+            print("!!!! Wind only entered !!!!")
             ### In this case flatfield sim do not make a slab --> make something up: see fu_instab opt=windonly
             df_P.loc[index, 'napwindonly'] = 1
             df_P.loc[index, 'napex'] = 2 #  % no weak layer -> we can't pull up the problem the following day
@@ -1096,5 +1100,42 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
             df_P.loc[index,'napPRO_wf']  = PRO[2]  
             df_P.loc[index,'napPRO_ac_ga17']  = PRO[3] 
             print('[D]  Wind slabs possibly /wo new snow')
-    
+
+        """Wind only based on Meteo df and surface snow (cmb)"""
+        ### Wind slab problem if wind above threshold and loose snow on top within last (3) days
+        ### index: index in df_P
+        ### ind_dry and ind_wet: index in season_list_red
+        vw_threshold = 5 # m/s
+        vw_threshold_days = 3
+        dy_past     = dy-datetime.timedelta(days=vw_threshold_days)
+        mask_wind   = (df_met['timestamp'] >= dy_past) & (df_met['timestamp'] <= dy)
+        df_met_wind = df_met.loc[mask_wind].reset_index(drop=True)
+        mask_vw_threshold = df_met_wind['VW_drift'] >= vw_threshold
+        # print(df_met_wind["timestamp"][mask_vw_threshold])
+        
+        if np.any(mask_vw_threshold):
+            i_max = sum(mask_vw_threshold)
+            keep_looking = 0
+            i = 0
+            while keep_looking==0:
+                ### Select profile for day with wind above threshold
+                date_wind = pd.Timestamp.date(df_met_wind["timestamp"][mask_vw_threshold].iloc[i])
+                if date_wind == pd.Timestamp.date(dy):
+                    df_prof_wind = season_list_red[ind_dry]
+                elif date_wind == (pd.Timestamp.date(dy) - datetime.timedelta(days=1)):
+                    df_prof_wind = season_list_red[ind_dry-2]
+                elif date_wind == (pd.Timestamp.date(dy) - datetime.timedelta(days=2)):
+                    df_prof_wind = season_list_red[ind_dry-4]
+                else:
+                    df_prof_wind = season_list_red[ind_dry-6]
+                
+                ### Check surface grain type (if not 'RG' snow can be transported)
+                if df_prof_wind['graintype'][0][0] in ['PP','PPgp','DF','FC','SH','DH']:
+                    keep_looking = 1
+                    df_P.loc[index, 'winex'] = 1
+                elif i < (i_max-1):
+                    i += 1
+                else:
+                    keep_looking = 1
+
     return df_P

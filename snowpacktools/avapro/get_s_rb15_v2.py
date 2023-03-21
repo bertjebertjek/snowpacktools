@@ -1,3 +1,10 @@
+################################################################################
+# Copyright 2022 Avalanche Warning Service Tyrol                               #
+################################################################################
+# This is free software you can redistribute/modify under the terms of the     #
+# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
+################################################################################
+
 #Calculate the failure initiation (Reuter et al 2015) translated into Python by Perfler
 
 
@@ -15,14 +22,6 @@
 #msswl,skierloadE,equiHslab,mssANA = [nan, 628935.0600920586, 0.26595362934226907, 638.4301025263883]
 
 import numpy as np
-
-## path to FEM ... not implemented jet
-#FEpfad='C:\Daten\FEM\layered_slab\runs\'; %path for input file
-#outpfad='C:\users\reuter\H\FRAC\FEM\get_S_rc_ts\outdata_S\';
-def Ela(x):
-
-    Ela = (1.8e5*exp(x/67))
-    return Ela        # Scapozza 
 
 def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None): 
     """ routine to calculate the failure initiation (Reuter et al. 2015) translated into python Perfler 2022

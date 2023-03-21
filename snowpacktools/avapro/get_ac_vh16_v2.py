@@ -1,4 +1,11 @@
-#%% solver to get critical crack length (Reuter et al. 2015) and analy. sol.
+################################################################################
+# Copyright 2022 Avalanche Warning Service Tyrol                               #
+################################################################################
+# This is free software you can redistribute/modify under the terms of the     #
+# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
+################################################################################
+
+### solver to get critical crack length (Reuter et al. 2015) and analy. sol.
 #% i.e. solving the equation presented in Schweizer et al. 2011, which was
 #% derived from beam bending eq after Heierli 2008
 #% can be used with get_Ebulk.m (for effect. modulus) which includes FE-based calibration after van Herwijnen et al. 2016
@@ -7,22 +14,11 @@
 #% mute=1: stops notifications
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from math import e
-import datetime
-from dateutil.relativedelta import relativedelta
 import sympy as sym
 
-from snowpacktools.avapro import fu_tau_p_CoJ15
-from snowpacktools.avapro import get_s_rb15_v2 as pro_rb15
+from snowpacktools.avapro import fu_instab
 
 # laws and constants:
-
-
-def Ela(x): # Scapozza
-    ela =1.8*10**5 * np.exp(x/67)
-    return ela
 
 def Heierlifun ( r,E, H, alp, rho):
     # %Heierli's formula for total energy of a crack 
@@ -84,7 +80,7 @@ def get_ac_vh16_v2(Eslab,rhoslab,hslab,wf,alp,  mute =1,  rho_wl = -999 ,tau_p= 
             print('data missing to calc ac after Gaume17')
     else:    
         Hwl = 0.01
-        Gwl = Ela(rho_wl)/2
+        Gwl = fu_instab.Ela(rho_wl)/2
         lam = (Eslab / Gwl * hslab * Hwl)**0.5
         ac_ga17 = lam * (-tau_g+ np.emath.sqrt(tau_g**2 + 2*sigma_g*(tau_p-tau_g))) / sigma_g
 

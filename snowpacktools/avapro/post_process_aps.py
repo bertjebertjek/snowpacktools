@@ -136,23 +136,6 @@ def assign_aps(df_P, config):
             df_P.loc[index,'dapex_isrel_red'] = int(np.sum( ~np.isnan(df_P.loc[index,'dapex_isrel']))>0)
 
 
-    ########################
-    ###  WE ALSO NEED TO GET THE WIND INDICATOR FOR WIND LOADING (rather than new snow loading -- pure wind slab case)
-    ### Days with neither pap nor nap, but wind loading
-    #? sele=find(P.napwindonly)
-    #? df_P['winex'] = df_P['napwindonly']
-    
-    df_P['winex'] = np.NaN
-    df_P['winex'] = np.where ( (df_P['drft']> drftthrsh ) , 1, 0 )
-
-
-    # print(df_P.columns.values)
-    df_P['winex_sele_trigger'] = df_P['winex']
-    print('[I]  WINEX (trigger):', np.sum(df_P['winex_sele_trigger']))
-    # print('[I]  DAPs (natural):', np.sum(df_P['winex_sele_trigger']))
-    ### Simple approach... take wind speed above threshold and loose snow in upper snow layer 
-    ########################
-
     """DAP is secondary release of new snow, wind slab AND/OR persistent (PAP)"""
     ### Natural release criteria
     df_P['dapex_sele_natural'] = np.where((df_P['dapex_isrel_red']== 1) & (~ (df_P['napdycrit_natural'] == 1)),  0, df_P['dapex_isrel_red'])
@@ -190,5 +173,17 @@ def assign_aps(df_P, config):
     df_P['wapLWC_isrel'] = np.where( df_P['wapcycle'] > 1 , df_P['wapLWC_isrel'] / lwcthrsh_1, df_P['wapLWC_isrel'])
 
     print('[I]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel']> 0]))
+
+
+    """Wind (WSAP/winex) based on VW and loose snow"""
+    # df_P['winex_sele_trigger'] = df_P['winex']
+    print('[I]  WSAPs:', np.sum(df_P['winex']))
+
+    ### (WE ALSO NEED TO GET THE WIND INDICATOR FOR WIND LOADING (rather than new snow loading -- pure wind slab case))
+    ### (Days with neither pap nor nap, but wind loading)
+    #? sele=find(P.napwindonly)
+    #? df_P['winex'] = df_P['napwindonly']
+    #? df_P['winex'] = np.NaN
+    #? df_P['winex'] = np.where ( (df_P['drft']> drftthrsh ) , 1, 0 )
 
     return df_P
