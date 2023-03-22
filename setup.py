@@ -25,6 +25,7 @@ setuptools.setup(
         "matplotlib",
         "pandas",
         "xarray",
-        "netcdf4"
+        "netcdf4",
+        "sympy"
     ]
 )
