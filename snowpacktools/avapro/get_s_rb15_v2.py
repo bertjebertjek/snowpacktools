@@ -5,10 +5,7 @@
 # GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
-#Calculate the failure initiation (Reuter et al 2015) translated into Python by Perfler
-
-
-#####  Test data for function ( first iteration step from SNPCAMP data)
+# -------- Test data for function ( first iteration step from SNPCAMP data) ------- #
 #alp = 38
 #calcFEM = 0
 #E= [ 1172470.92044471, 605854.839145144, 862746.607687970, 892877.495346702, 962059.456524898, 644887.739186792, 12002649.4584851]
@@ -20,15 +17,17 @@
 #tau_p = 120
 # should return:
 #msswl,skierloadE,equiHslab,mssANA = [nan, 628935.0600920586, 0.26595362934226907, 638.4301025263883]
+# -------- Test data for function ( first iteration step from SNPCAMP data) ------- #
 
 import numpy as np
 
+
 def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None): 
-    """ routine to calculate the failure initiation (Reuter et al. 2015) translated into python Perfler 2022
-        includes ANSYS run for max shear stress at the weak layer
-        170817 calling get_S_rb15([.1,.1,.1,.005,.4],[200,200,200,200,200],[3,3,3,3,3]*1e6,1e5,38)
+    """Subroutine to calculate the failure initiation (Reuter et al. 2015)
+    - includes ANSYS run for max shear stress at the weak layer
+    - 170817 calling get_S_rb15([.1,.1,.1,.005,.4],[200,200,200,200,200],[3,3,3,3,3]*1e6,1e5,38)
         and poi=.49 and tuning: F/1.8 and Wski/2 reproduces analytical solution by 99.5%
-        170817 routine reproduced MAIN_ini_multi_pene.m (watch for WL-thickness!)
+    - 170817 routine reproduced MAIN_ini_multi_pene.m (watch for WL-thickness!)
 
     Args:
         layer thickness (H)
@@ -53,30 +52,32 @@ def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None):
     else:
         pene = 1
     
-    poi = 0.25
+    """Constants"""
+    # poi  = 0.25
     Wski = 0.2
-    F = 780
+    F    = 780
 
- #%% OPTION 1: compact the snow in the slab within the penetration depth   
+    """OPTION 1: compact the snow in the slab within the penetration depth"""
     if pene:
         print('not implemented... line33...52')
 
-#%% OPTION 2: /wo considering penetration depth
-#% otherwise we use H, rho, E as are
+    """OPTION 2: /wo considering penetration depth"""
+    ###otherwise we use H, rho, E as are
     
     if calcFEM:
         print('FEM not implemented', 'matlabcode get_S_rb15_v2 line 54...85')
-         #%% MODEL stress at the depth of the weak layer
+        ###MODEL stress at the depth of the weak layer
     else:
-              msswl = np.NaN
-              if not mute:
-                print('--- Entering failure ini analyt. sol. --- ');
-#%% analytic solution
-#% account for layering /w equivalent slab thickness (Monti et al. 2016)   
+        msswl = np.NaN
+        if not mute:
+            print('--- Entering failure ini analyt. sol. --- ')
+    
+    """Analytic solution"""
+    ### Account for layering /w equivalent slab thickness (Monti et al. 2016)   
     skierloadE = (np.sum(np.array(H[0:-2])*np.array(E[0:-2])**0.33)/ np.sum(H[0:-2]))**3
     equiHslab= np.sum(H[0:-2]) #* (skierloadE/E(end-1))^.33;
     
-#   % analytic (surface load) McClung & Sz 99 (see maxshstr_anal_fem.m)
+    ### Analytic (surface load) McClung & Sz 99 (see maxshstr_anal_fem.m)
     lineload = F/ 1.8   #force divided by length of skis (def=780/1.8)
     B = lineload / (Wski/2) / (2*np.pi)* np.sin(np.deg2rad(alp))
     A = - lineload / (Wski/2) / (2*np.pi)* np.cos(np.deg2rad(alp))
@@ -94,14 +95,14 @@ def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None):
                             )
     mssANA = np.max(deltatauxy)
     
-#%% Gaume Reuter 17 Skier crack length
-#% F=500;  %default 780 [N][[
-#% % idea: get F from: msswl==Boussineq solution (2nd term in next line)
-#% 
-#% myfun = @(x) tau_g +   2*F/(hslab*cosd(alp)*3.14)*(sind(x))^2*sind(x+alp)*cosd(x)   - tau_p;
-#% S1=fzero(myfun,20); %search myfun(x)=0 for values of x starting with initial value 20°
-#% S2=fzero(myfun,70);  %search myfun(x)=0 for values of x starting with initial value 70°
-#% skiercracklength=hslab*cosd(alp)*(1/tand(S1)-1/tand(S2));
+    """Gaume Reuter 17 Skier crack length"""
+    # F=500;  %default 780 [N][[
+    #### idea: get F from: msswl==Boussineq solution (2nd term in next line)
+    # 
+    # myfun = @(x) tau_g +   2*F/(hslab*cosd(alp)*3.14)*(sind(x))^2*sind(x+alp)*cosd(x)   - tau_p;
+    # S1=fzero(myfun,20); %search myfun(x)=0 for values of x starting with initial value 20°
+    # S2=fzero(myfun,70);  %search myfun(x)=0 for values of x starting with initial value 70°
+    # skiercracklength=hslab*cosd(alp)*(1/tand(S1)-1/tand(S2));
 
     if not mute:
         print('      Analytic solution  |  FE solution')
@@ -109,7 +110,3 @@ def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None):
         print('failure init crit = ', str(round(tau_p/mssANA*10)/10),'  |  ', str(round(tau_p/msswl*10)/10))
 
     return msswl,skierloadE,equiHslab,mssANA
-
-
-
-

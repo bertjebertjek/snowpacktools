@@ -123,25 +123,27 @@ def find_aps(config, pro_path, smet_path):
         'napgt', 'papgt','dapgt', #WL grain type
         'napburial', 'papburial','dapburial', # WL burial date
         'napwindonly', #pure wind slab problem, napex is set 2!
-        ### wap
+        ### WAP
         'wapex', 'wapcalc', 'wapLWC','wapSWE','wapTWAT', 
         'wapISO', 'wapWLdry','waponset','wapcycle',
-        ### nap 
+        ### NAP 
         'napDAM_Sn','napDAM_precstabMIN24','napDAM_extm2failMIN24',
         'napDAM_tmcrit','napINI_tau_p','napINI_c_0','napINI_Sk','napINI_Sk_ana',
         'napINI_mssANA','napINI_Sk_fem', 'napINI_msswl','napINI_sigma_g',
         'napDYN','napPRO_ac_si06','napPRO_ac_vh16','napPRO_wf', 'napPRO_ac_ga17',
-        ### pap
+        ### PAP
         'papDAM_Sn','papDAM_precstabMIN24','papDAM_extm2failMIN24',
         'papDAM_tmcrit','papINI_tau_p','papINI_c_0','papINI_Sk','papINI_Sk_ana',
         'papINI_mssANA','papINI_Sk_fem', 'papINI_msswl','papINI_sigma_g',
         'papDYN','papPRO_ac_si06','papPRO_ac_vh16','papPRO_wf', 'papPRO_ac_ga17',
-        ### dap
+        ### DAP
         'dapDAM_Sn','dapDAM_precstabMIN24','dapDAM_extm2failMIN24',
         'dapDAM_tmcrit','dapINI_tau_p','dapINI_c_0','dapINI_Sk','dapINI_Sk_ana',
         'dapINI_mssANA','dapINI_Sk_fem', 'dapINI_msswl','dapINI_sigma_g',
         'dapDYN','dapPRO_ac_si06','dapPRO_ac_vh16','dapPRO_wf', 'dapPRO_ac_ga17',
-
+        ### WSAPs
+        'winex','winex_count',
+        ### Meteo-Data
         'hn24','hn48','drft','hs',
         'snowclim']
 
@@ -194,7 +196,7 @@ def find_aps(config, pro_path, smet_path):
     df_P['papgt'] =  [[np.nan, np.nan, np.nan] for _ in range(len(df_P))]
 
     cycle_nr = 1 ### Tracking of wet cycles
-    runno =1
+    runno = 1
 
     """Initialization"""
     if initilization_type=='profile':
@@ -494,7 +496,7 @@ def initialize_with_RTA(config,season_list,df_met,df_P):
                 if debug: print('[D]    No healthy slab --> keep nap for +1 day')
                 df_P.loc[index,'napcalc'] = 0
                 #% need to evolve shear strength for the next day
-                tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P,  WLopt ='nap', opt = 'nonper') # %initial values defined there
+                tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P,WLopt ='nap') # initial values defined there
                 df_P.loc[index,'napINI_tau_p']  = tau_p
                 df_P.loc[index,'napINI_c_0']    = c_0
             if debug: print('[D]  Initialization of NAP')
@@ -573,7 +575,7 @@ def initialize_with_RTA(config,season_list,df_met,df_P):
 def find_prior_problems(config,index,df_prof,df_met,df_P):
     """Move WLs from previous to current day, if still relevant
     Tasks:
-        - update layer positions and properties of all DAPs
+        - update layer positions and properties of all DAPs via RTA initialization
     """
 
     """Thresholds"""
@@ -589,6 +591,8 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
     minnsthrsh  = float(config.get('AVAPRO-THOLDS-WL', 'minnsthrsh'))    # def.: 0.05m,min. amount of new snow [m], to start identifying problems (we find WL with windows, do don't care about +-5cm of fresh snow)
     nsthrsh     = float(config.get('AVAPRO-THOLDS-WL', 'nsthrsh'))       # def.: .2,amount of new snow [m] (within 48 or 24 hr), to keep a non-persis. problem for one more day
     minSLthrsh  = float(config.get('AVAPRO-THOLDS-WL', 'minSLthrsh'))    # def.: .2,min. slab thickness [m] to be considered a healthy slab,  
+
+    vw_thrsh_days = int(config.get('AVAPRO-THOLDS-WL', 'vw_thrsh_days'))
 
     """Prior PAP"""
     if df_P.loc[index-1, 'papex'] == 1:
@@ -640,7 +644,7 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                 if debug: print('[D]    No slab, but keep PAP', index)
                 df_P.loc[index, 'papcalc']  = 0 
                 ### fu tau makes it slow; shear strength keeps evolving matlab 174
-                tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P,  WLopt ='pap', opt = 'per', pre_existing= True) # % rhowl only needed when layer born
+                tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P, WLopt ='pap', pre_existing= True) # rhowl only needed when layer born
                 df_P.loc[index,'papINI_tau_p'] = tau_p
                 df_P.loc[index,'papINI_c_0'] = c_0
         else:
@@ -805,6 +809,14 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                 if debug: print('[D]    Drop DAP', index)
         if outputDAP !=0:
             print('[D]    Implement matlab line 254')
+
+
+    """WSAPs (Wind slab avalanche problem)"""
+    if (df_P.loc[index-1, 'winex'] == 1) and (df_P.loc[index-1, 'winex_count'] < vw_thrsh_days):
+        df_P.loc[index, 'winex'] = 1
+        df_P.loc[index, 'winex_count'] = df_P.loc[index-1, 'winex_count'] + 1
+    else:
+        df_P.loc[index, 'winex_count'] = 0
     
     return df_P
 
@@ -885,6 +897,8 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
     minSLdens   = int(config.get('AVAPRO-THOLDS-WL', 'minSLdens'))       # 120,min average density of a potential slab
     minSLthrsh  = float(config.get('AVAPRO-THOLDS-WL', 'minSLthrsh'))    # def.: .2,min. slab thickness [m] to be considered a healthy slab,
     minnsthrsh  = float(config.get('AVAPRO-THOLDS-WL', 'minnsthrsh'))    # def.: 0.05m,min. amount of new snow [m], to start identifying problems (we find WL with windows, do don't care about +-5cm of fresh snow)
+
+    vw_thrsh = int(config.get('AVAPRO-THOLDS-WL', 'vw_thrsh'))
 
     po = 'height_m'
     if index == 0:
@@ -1065,7 +1079,7 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
                 else:   # Matlab line 392                     
                     if debug: print('[D]    No healthy slab, keep NAP for +1 day')
                     df_P.loc[index,'napcalc'] = 0
-                    tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P,  WLopt ='nap', opt = 'nonper') # %initial values defined there
+                    tau_p, c_0 = fu_tau_p_CoJ15.fu_tau_p_CoJ15(index, df_P, WLopt ='nap')
                     df_P.loc[index,'napINI_tau_p']  = tau_p
                     df_P.loc[index,'napINI_c_0']  = c_0
         
@@ -1087,9 +1101,9 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
             df_P.loc[index,'napINI_tau_p'] = INI[0]
             df_P.loc[index,'napINI_c_0'] = INI[1]
             df_P.loc[index,'napINI_Sk'] = INI[2]
-            df_P.loc[index,'napINI_Sk_ana'] = INI[3] # % McClung & Sz 99, Monti etal 16
+            df_P.loc[index,'napINI_Sk_ana'] = INI[3] # McClung & Sz 99, Monti etal 16
             df_P.loc[index,'napINI_mssANA'] = INI[4] 
-            df_P.loc[index,'napINI_Sk_fem'] = INI[5] #% Rb & Sz 18 GRL append. 
+            df_P.loc[index,'napINI_Sk_fem'] = INI[5] # Rb & Sz 18 GRL append. 
             df_P.loc[index,'napINI_msswl'] = INI[6]
             df_P.loc[index,'napINI_sigma_g'] = INI[7]
             df_P.loc[index,'napDYN'] = DYN
@@ -1105,37 +1119,18 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
         ### Wind slab problem if wind above threshold and loose snow on top within last (3) days
         ### index: index in df_P
         ### ind_dry and ind_wet: index in season_list_red
-        vw_threshold = 5 # m/s
-        vw_threshold_days = 3
-        dy_past     = dy-datetime.timedelta(days=vw_threshold_days)
+        dy_past     = dy-datetime.timedelta(days=1)
         mask_wind   = (df_met['timestamp'] >= dy_past) & (df_met['timestamp'] <= dy)
         df_met_wind = df_met.loc[mask_wind].reset_index(drop=True)
-        mask_vw_threshold = df_met_wind['VW_drift'] >= vw_threshold
+        mask_vw_threshold = df_met_wind['VW_drift'] >= vw_thrsh
         # print(df_met_wind["timestamp"][mask_vw_threshold])
         
         if np.any(mask_vw_threshold):
-            i_max = sum(mask_vw_threshold)
-            keep_looking = 0
-            i = 0
-            while keep_looking==0:
-                ### Select profile for day with wind above threshold
-                date_wind = pd.Timestamp.date(df_met_wind["timestamp"][mask_vw_threshold].iloc[i])
-                if date_wind == pd.Timestamp.date(dy):
-                    df_prof_wind = season_list_red[ind_dry]
-                elif date_wind == (pd.Timestamp.date(dy) - datetime.timedelta(days=1)):
-                    df_prof_wind = season_list_red[ind_dry-2]
-                elif date_wind == (pd.Timestamp.date(dy) - datetime.timedelta(days=2)):
-                    df_prof_wind = season_list_red[ind_dry-4]
-                else:
-                    df_prof_wind = season_list_red[ind_dry-6]
-                
-                ### Check surface grain type (if not 'RG' snow can be transported)
-                if df_prof_wind['graintype'][0][0] in ['PP','PPgp','DF','FC','SH','DH']:
-                    keep_looking = 1
-                    df_P.loc[index, 'winex'] = 1
-                elif i < (i_max-1):
-                    i += 1
-                else:
-                    keep_looking = 1
+            df_prof_wind = season_list_red[ind_dry]
+        
+            ### Check surface grain type (if not 'RG' snow can be transported)
+            if df_prof_wind['graintype'][0][0] in ['PP','PPgp','DF','FC','SH','DH']:
+                df_P.loc[index, 'winex'] = 1
+                df_P.loc[index, 'winex_count'] = 1
 
     return df_P

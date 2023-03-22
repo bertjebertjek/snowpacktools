@@ -19,7 +19,7 @@ import pickle
 from snowpacktools.avapro import find_aps
 from snowpacktools.avapro import post_process_aps
 
-def main(config_file):
+def avapro(config_file):
     """Main function to run the algorithm on all .pro (+.smet) files
     in input folder defined in configuration file"""
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     """
     args = sys.argv[1:] # config_file = args[0]
     if (os.path.isfile(args[0])):
-        main(args[0])
+        avapro(args[0])
     else:
         name = str(args[0])
         print('File ({}) not found.'.format(name))

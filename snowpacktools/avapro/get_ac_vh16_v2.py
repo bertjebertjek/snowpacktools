@@ -5,23 +5,14 @@
 # GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
-### solver to get critical crack length (Reuter et al. 2015) and analy. sol.
-#% i.e. solving the equation presented in Schweizer et al. 2011, which was
-#% derived from beam bending eq after Heierli 2008
-#% can be used with get_Ebulk.m (for effect. modulus) which includes FE-based calibration after van Herwijnen et al. 2016
-#% also incl. analytic solutions of Sigrist 2006 (his diss., before Heierli)
-#% also incl. Gaume 2017 (heuristic from DEM results) 
-#% mute=1: stops notifications
-
 import numpy as np
 import sympy as sym
 
 from snowpacktools.avapro import fu_instab
 
-# laws and constants:
 
-def Heierlifun ( r,E, H, alp, rho):
-    # %Heierli's formula for total energy of a crack 
+def Heierlifun(r, E, H, alp, rho):
+    """Heierli's formula for total energy of a crack"""
     gamma = 1
     eta = (12/15)**0.5
     g = 9.81
@@ -39,19 +30,21 @@ def Heierlifun ( r,E, H, alp, rho):
         3/2 / E / (H**3)* (sig**2) * (r**4)
     return w
 
-def get_ac_vh16_v2(Eslab,rhoslab,hslab,wf,alp,  mute =1,  rho_wl = -999 ,tau_p= -999 ):
-    #% solver to get critical crack length (Reuter et al. 2015) and analy. sol.
-    # i.e. solving the equation presented in Schweizer et al. 2011, which was
-    # derived from beam bending eq after Heierli 2008
-    # can be used with get_Ebulk.m (for effect. modulus) which includes FE-based calibration after van Herwijnen et al. 2016
-    #a also incl. analytic solutions of Sigrist 2006 (his diss., before Heierli)
-    # also incl. Gaume 2017 (heuristic from DEM results) 
-    # mute=1: stops notifications
-    
-    if not mute :
+
+def get_ac_vh16_v2(Eslab, rhoslab, hslab, wf, alp, mute=1, rho_wl=-999, tau_p=-999):
+    """Solver to get critical crack length (Reuter et al. 2015) and analy. sol.
+    - i.e. solving the equation presented in Schweizer et al. 2011, which was
+    - derived from beam bending eq after Heierli 2008
+    - can be used with get_Ebulk.m (for effect. modulus) which includes FE-based calibration after van Herwijnen et al. 2016
+    - a also incl. analytic solutions of Sigrist 2006 (his diss., before Heierli)
+    - also incl. Gaume 2017 (heuristic from DEM results) 
+    - mute = 1: stops notifications
+    """
+    if not mute:
         print ('--- Entering ac calc /w calibration of vh16 ---')
         
-    #%% solve Heierli's eq for critical cut length (r)
+    
+    """Solve Heierli's eq for critical cut length (r)"""
     r = sym.Symbol('r', real = True) # just real part of solution
     
     A = sym.solve(Heierlifun(r,Eslab,hslab,alp,np.round(rhoslab))-wf)
@@ -65,16 +58,16 @@ def get_ac_vh16_v2(Eslab,rhoslab,hslab,wf,alp,  mute =1,  rho_wl = -999 ,tau_p= 
     if not mute:
         print('ac = ', str(round(ac*100)/100), 'm;    wf = ', str(round(wf*100)/100),'J/m^2') 
     
-    # %% get other analytic solutions too
+    """Get other analytic solutions"""
     tau_g = rhoslab * 9.81 * hslab * np.sin(alp*np.pi/180)
     sigma_g = rhoslab * 9.81 * hslab * np.cos(alp*np.pi/180)
     
-    #% Sigrist 2006
+    ### Sigrist 2006
     ac_si06 = ( 2 * Eslab * hslab**3 * wf / 3 / (tau_g**2 + sigma_g**2) )**0.25 #  % note that tau^2+sigma^2 = (rhoslab*g*hslab)^2
     
     
     if rho_wl== -999:
-        # Gaume 2017 (bending and tension terms)
+        ### Gaume 2017 (bending and tension terms)
         ac_ga17 = np.NaN
         if not mute:
             print('data missing to calc ac after Gaume17')
@@ -85,8 +78,4 @@ def get_ac_vh16_v2(Eslab,rhoslab,hslab,wf,alp,  mute =1,  rho_wl = -999 ,tau_p= 
         ac_ga17 = lam * (-tau_g+ np.emath.sqrt(tau_g**2 + 2*sigma_g*(tau_p-tau_g))) / sigma_g
 
     
-    
     return ac[0], wf, ac_si06, ac_ga17
-    
-    #return ac, wf, ac_si06, ac_ga17
-
