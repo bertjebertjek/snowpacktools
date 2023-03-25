@@ -1,4 +1,3 @@
-
 ################################################################################
 # Copyright 2022 Avalanche Warning Service Tyrol                               #
 ################################################################################
@@ -856,7 +855,7 @@ def identify_wet_ap(config,index,ind_wet,season_list_red,df_met_red,df_P,cycle_n
         # gt_2 = df_prof_wet.graintype[:-1].str[1].str.contains( 'MF', case = False ) not needed at the moment
         df_P.loc[index, 'wapWLdry'] = sum( wet_po & wet_lwc & gt_1)>0 #ex. still a dry snow layer in snow cover? (except ground)
 
-        ### [1] liquid water content as volume fraction lwctdysmet = M.totwater; % compare with smet file -- total liquid wate
+        ### liquid water content as volume fraction lwctdysmet = M.totwater; % compare with smet file -- total liquid wate
         h = 'thickness_m'
         lwctdy =sum( df_prof_wet['lwc_tot']*df_prof_wet[h]) / sum(df_prof_wet[h])
 

@@ -16,8 +16,8 @@ import pickle
 # from matplotlib.colors import BoundaryNorm, ListedColormap
 # from matplotlib.ticker import AutoMinorLocator, FuncFormatter
 
-from snowpacktools.avapro import find_aps
-from snowpacktools.avapro import post_process_aps
+from snowpacktools.avapro import find_aps, post_process_aps, visually_process_aps
+
 
 def avapro(config_file):
     """Main function to run the algorithm on all .pro (+.smet) files
@@ -27,8 +27,9 @@ def avapro(config_file):
     config.read(config_file)
 
     """Parameters for research applications"""
-    rerun_find_WL           = 1
-    rerun_assign_avaprobs   = 1
+    rerun_find_WL            = 1
+    rerun_assign_avaprobs    = 1
+    run_visualize_avaprobs   = 1
 
     """Get list of available files"""
     SIM_FOLDER = config.get('AVAPRO', 'SIM_FOLDER_PATH')
@@ -86,6 +87,14 @@ def avapro(config_file):
             print('[I]  Loading avalanche problems from pkl files')
             df_P = pickle.load(open(os.path.join(OUTPUT_FOLDER, ele_name + '_df_P_APS.pkl'), "rb"))
         
+        """Visualize Avalanche Problems (APs)"""
+        if run_visualize_avaprobs == 1:
+            print('[I]  Visualizing avalanche problems from pkl files of tracked WLs')
+            path_to_pro = list_pro_red[ele]
+            output_path = os.path.join(config["AVAPRO"]["output_dir"],config["AVAPRO"]["output_name"])
+            res         = "1d"
+            visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
+
     print('[I]  Tracking WLs and assigning avalanche problems finished')
 
 

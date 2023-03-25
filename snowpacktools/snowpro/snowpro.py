@@ -23,8 +23,8 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-import awset
-import awsmet
+# import awset
+# import awsmet
 from snowpacktools.snowpro import pro_helper
 
 def read_pro(path,res='1h'):
@@ -332,7 +332,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     start_readin = time.time()
     df_pro_list_temp, meta_dict = read_pro(path_to_pro,res=res)
     end_readin = time.time()
-    print('Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
+    print('[I]  Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
 
     # Filter for certain resolution and time frame
     w, hours = pro_helper.set_resolution(res)

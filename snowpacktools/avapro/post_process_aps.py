@@ -13,10 +13,8 @@ def assign_aps(df_P, config):
     """Assign avalanche problems (APs) based on collected WLs"""
     
     """Thresholds"""
-    debug = int(config.get('AVAPRO', 'debug'))
-    lwcthrsh_0      = float(config.get('AVAPRO-THOLDS-WL', 'lwcthrsh_0')) 
-    lwcthrsh_1      = float(config.get('AVAPRO-THOLDS-WL', 'lwcthrsh_1'))
-    dysisomax       = int(config.get('AVAPRO-THOLDS-WL', 'dysisomax'))
+    debug       = int(config.get('AVAPRO', 'debug'))
+    dysisomax   = int(config.get('AVAPRO-THOLDS-WL', 'dysisomax'))
 
     if config.get('AVAPRO', 'scmopt') == 'snp':
         thold_scmopt = 'AVAPRO-THOLDS-APS-SNP'
@@ -147,13 +145,16 @@ def assign_aps(df_P, config):
     print('[I]  DAPs (natural):', np.sum(df_P['dapex_sele_natural']))
     
     """Look at WAPs of season"""
-    # df_P.loc[df_P['wapLWC'].isna(), 'wapLWC'] =0 
+    ### Define a variable that indicates if LWC increased with respect to the previous day
+    # df_P.loc[df_P['wapLWC'].isna(), 'wapLWC'] = 0 # (format for plot)
     i = np.arange(0,len(df_P['wapLWC'])-1)
     iplus = np.arange(1,len(df_P['wapLWC']))
     df_P['incr'] = df_P['wapLWC'].copy()
     df_P.loc[iplus, 'incr'] = np.where(((df_P['wapLWC'].values[iplus]-df_P['wapLWC'].values[i])>0.0001), 1, np.NaN)
     df_P['incr'].values[0] = np.NaN
-    df_P.loc[df_P['wapISO'].isna(), 'wapISO'] =0 
+    
+    ### Count days in a row the snowpack is isothermal based on defining isothermal state in find_aps()
+    df_P.loc[df_P['wapISO'].isna(), 'wapISO'] = 0 
     df_P['dysio'] = [np.NaN for _ in range(len(df_P))]
 
     df_P.loc[0,'dysio'] = 0
@@ -162,18 +163,19 @@ def assign_aps(df_P, config):
             df_P.loc[ii,'dysio'] = df_P.loc[ii-1,'dysio'] + 1
         else:
             df_P.loc[ii,'dysio'] = 0
-    # waponset = df_P['waponset'][~df_P['waponset'].isna()].values[0]
-    # df_P['wapex_sele'] = np.where( (df_P['dy'] >= waponset) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.NaN)
+
+    ### Format 'waponset'
     df_P.loc[df_P['waponset'].isna(), 'waponset'] = pd.NaT
+    
     # df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset']) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.NaN)
-    df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax ), 1, np.NaN)
+    df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.NaN)
+    print('[I]  WAPs:', np.sum(df_P['wapex_sele']))
 
-    df_P['wapLWC_isrel'] = np.where( ~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.NaN )
-    df_P['wapLWC_isrel'] = np.where( df_P['wapcycle'] ==1 , df_P['wapLWC_isrel'] / lwcthrsh_0, df_P['wapLWC_isrel'])
-    df_P['wapLWC_isrel'] = np.where( df_P['wapcycle'] > 1 , df_P['wapLWC_isrel'] / lwcthrsh_1, df_P['wapLWC_isrel'])
-
-    print('[I]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel']> 0]))
-
+    # df_P['wapLWC_isrel'] = np.where(~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.NaN )
+    # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] ==1, df_P['wapLWC_isrel'] / lwcthrsh_0, df_P['wapLWC_isrel'])
+    # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] > 1, df_P['wapLWC_isrel'] / lwcthrsh_1, df_P['wapLWC_isrel'])
+    # print('[I]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel'] > 0]))
+    
 
     """Wind (WSAP/winex) based on VW and loose snow"""
     # df_P['winex_sele_trigger'] = df_P['winex']
