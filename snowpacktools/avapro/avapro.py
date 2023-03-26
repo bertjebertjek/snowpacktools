@@ -27,8 +27,8 @@ def avapro(config_file):
     config.read(config_file)
 
     """Parameters for research applications"""
-    rerun_find_WL            = 1
-    rerun_assign_avaprobs    = 1
+    rerun_find_WL            = 0
+    rerun_assign_avaprobs    = 0
     run_visualize_avaprobs   = 1
 
     """Get list of available files"""

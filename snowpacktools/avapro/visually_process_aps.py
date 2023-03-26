@@ -57,11 +57,13 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     icon_drift      = image.imread(icon_drift)
     icon_persistent = os.path.join(this_dir, icon_path, 'Icon-Avalanche-Problem-Persistent-Weak-Layer-EAWS.jpg')
     icon_persistent = image.imread(icon_persistent)
+    icon_deep_pwl   = os.path.join(this_dir, icon_path, 'Icon-Avalanche-Problem-Deep-Persistent-Weak-Layer-EAWS.jpg')
+    icon_deep_pwl   = image.imread(icon_deep_pwl)
     icon_wet        = os.path.join(this_dir, icon_path, 'Icon-Avalanche-Wet-Snow-EAWS.jpg')
     icon_wet        = image.imread(icon_wet)
     icon_gliding    = os.path.join(this_dir, icon_path, 'Icon-Avalanche-Problem-Gliding-Snow-EAWS.jpg')
     icon_gliding    = image.imread(icon_gliding)
-    icon_list = [icon_newsnow, icon_drift, icon_persistent, icon_persistent, icon_wet, icon_gliding]
+    icon_list = [icon_newsnow, icon_drift, icon_persistent, icon_deep_pwl, icon_wet, icon_gliding]
 
     start_readin = time.time()
     df_pro_list_temp, meta_dict = snowpro.read_pro(path_to_pro,res=res)
@@ -112,7 +114,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
         cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     # VISUALIZATION
-    fig, ((ax0, ax),(ax1,ax_aps)) = plt.subplots(2,2,figsize=(12,10),sharex=True, gridspec_kw={'width_ratios':[1,15],'hspace':0.03,'wspace':0.03}) # 'height_ratios':[1,1]
+    fig, ((ax0, ax),(ax1,ax_aps)) = plt.subplots(2,2,figsize=(12,7),sharex=True, gridspec_kw={'width_ratios':[1,15],'hspace':0.03,'wspace':0.03}) # 'height_ratios':[1,1]
     ax0.axis('off')
     ax1.axis('off')
 
@@ -215,8 +217,8 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     # LABELS_GRAIN_TYPE_BAR        = ['PP','DF','PPgp','SH','DH','FC(xr)','RG','MF','MFcr','IF']
     # COLORS_GRAIN_TYPE_BAR_IACS2  = ['#00FF00','#228B22','#696969','#FF00FF','#0000FF','#ADD8E6','#FFB6C1','#FF0000','#FF0000','#00FFFF']
     COLORS_APS = {'newSnow':'#00FF00','windSlab':'#228B22','deepPW':'#0000FF','PW':'#ADD8E6','wetSnow':'#FF0000'}
-    LW_NATURAL = 0.5
-    C_NATURAL  = "red"
+    LW_NATURAL = 1
+    C_NATURAL  = "gold"
     ax_aps.set_ylim([0,6])
 
     ax_aps.bar(df_P['dy'], df_P['napex_sele_trigger'], width=0.75, bottom=5, color=COLORS_APS['newSnow'])
@@ -226,15 +228,16 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     ax_aps.bar(df_P['dy'], df_P['wapex_sele'], width=0.75, bottom=1, color=COLORS_APS['wetSnow'])
 
     ax_aps.bar(df_P['dy'], df_P['napex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['newSnow'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
-    ax_aps.bar(df_P['dy'], df_P['papex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['PW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
+    ax_aps.bar(df_P['dy'], df_P['papex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['PW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL, label="Natural release")
     ax_aps.bar(df_P['dy'], df_P['dapex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['deepPW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
     
+    ax_aps.legend(loc='upper right')
     ### Add icons of avalanche problems
-    icon_xpos = -0.04
+    icon_xpos = -0.03
     icon_ypos = np.linspace(0.085,0.915,6)[::-1]
     shade = 0.75
     pad = 0.08
-    icon_zoom = 0.065
+    icon_zoom = 0.045
     
     for i,icon in enumerate(icon_list):
         imagebox = OffsetImage(icon, zoom=icon_zoom)
@@ -246,7 +249,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     fig.tight_layout()
     print('[I]  Saving AP and snowpack evolution figure')
     fig.savefig(output_path, facecolor='w', edgecolor='w',
-                format='png', dpi=150, bbox_inches='tight')
+                format='png', dpi=300, bbox_inches='tight')
     plt.close(fig)
     end_plotting = time.time()
     print('[I]  Visualization of APs and snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
