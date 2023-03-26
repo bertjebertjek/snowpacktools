@@ -27,9 +27,9 @@ def avapro(config_file):
     config.read(config_file)
 
     """Parameters for research applications"""
-    rerun_find_WL            = 0
-    rerun_assign_avaprobs    = 0
-    run_visualize_avaprobs   = 1
+    rerun_find_WL            = int(config["AVAPRO"]["rerun_find_WL"])
+    rerun_assign_avaprobs    = int(config["AVAPRO"]["rerun_assign_avaprobs"])
+    run_visualize_avaprobs   = int(config["AVAPRO"]["run_visualize_avaprobs"])
 
     """Get list of available files"""
     SIM_FOLDER = config.get('AVAPRO', 'SIM_FOLDER_PATH')
