@@ -247,6 +247,6 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     print('[I]  Saving AP and snowpack evolution figure')
     fig.savefig(output_path, facecolor='w', edgecolor='w',
                 format='png', dpi=150, bbox_inches='tight')
-
+    plt.close(fig)
     end_plotting = time.time()
     print('[I]  Visualization of APs and snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
