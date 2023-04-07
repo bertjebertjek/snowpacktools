@@ -216,7 +216,7 @@ def set_resolution(res):
 
     if res == '1d':
         w = 1
-        hours = [10]
+        hours = [6]
     elif res == '3h':
         w = 1/8
         hours = np.arange(0,24,3) # [0,3,6,9,12,15,18,21]

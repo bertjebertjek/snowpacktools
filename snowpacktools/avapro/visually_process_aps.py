@@ -13,7 +13,7 @@ import configparser
 import numpy as np
 import pandas as pd
 import xarray # needed for time axis
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -26,7 +26,7 @@ from snowpacktools.snowpro import snowpro
 from snowpacktools.snowpro import pro_helper
 
 
-def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE']):
+def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_path='output/', var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE']):
     """Visualization of avalanche problems and snowpack evolution in one figure with two axes.
     Plots snowpack evolution (PRO-file). Different variables or grain type can be visualized and overlayed.
     
@@ -184,6 +184,12 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
         cbar.set_label(var)
         # cbar.set_label("SK38 / -")
     
+    if DATETIME_STR!=None:
+        datetime_format = '%Y-%m-%dT%Hh%M'
+        datetime_tmr = datetime.strptime(DATETIME_STR, datetime_format) + timedelta(days=1)
+        ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
+        ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
+
     # AXES 
     if DATE_RANGE[0] == 'NONE':
         ax.set_xlim(df_pro_list[0].date[0],df_pro_list[-1].date[0])
@@ -217,20 +223,21 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, output_path='output/', var
     # LABELS_GRAIN_TYPE_BAR        = ['PP','DF','PPgp','SH','DH','FC(xr)','RG','MF','MFcr','IF']
     # COLORS_GRAIN_TYPE_BAR_IACS2  = ['#00FF00','#228B22','#696969','#FF00FF','#0000FF','#ADD8E6','#FFB6C1','#FF0000','#FF0000','#00FFFF']
     COLORS_APS = {'newSnow':'#00FF00','windSlab':'#228B22','deepPW':'#0000FF','PW':'#ADD8E6','wetSnow':'#FF0000'}
-    LW_NATURAL = 1
-    C_NATURAL  = "gold"
+    LW_NATURAL = 1.25
+    C_NATURAL  = "orange" # "gold"
     ax_aps.set_ylim([0,6])
 
-    ax_aps.bar(df_P['dy'], df_P['napex_sele_trigger'], width=0.75, bottom=5, color=COLORS_APS['newSnow'])
-    ax_aps.bar(df_P['dy'], df_P['winex'], width=0.75, bottom=4, color=COLORS_APS['windSlab'])
-    ax_aps.bar(df_P['dy'], df_P['papex_sele_trigger'], width=0.75, bottom=3, color=COLORS_APS['PW'])
-    ax_aps.bar(df_P['dy'], df_P['dapex_sele_trigger'], width=0.75, bottom=2, color=COLORS_APS['deepPW'])
-    ax_aps.bar(df_P['dy'], df_P['wapex_sele'], width=0.75, bottom=1, color=COLORS_APS['wetSnow'])
+    ax_aps.bar(df_P['dy'], df_P['napex_sele_trigger'], width=0.75, bottom=5, align='edge', color=COLORS_APS['newSnow'])
+    ax_aps.bar(df_P['dy'], df_P['winex'], width=0.75, bottom=4, align='edge', color=COLORS_APS['windSlab'])
+    ax_aps.bar(df_P['dy'], df_P['papex_sele_trigger'], width=0.75, bottom=3, align='edge', color=COLORS_APS['PW'])
+    ax_aps.bar(df_P['dy'], df_P['dapex_sele_trigger'], width=0.75, bottom=2, align='edge', color=COLORS_APS['deepPW'])
+    ax_aps.bar(df_P['dy'], df_P['wapex_sele'], width=0.75, bottom=1, align='edge', color=COLORS_APS['wetSnow'])
 
-    ax_aps.bar(df_P['dy'], df_P['napex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['newSnow'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
-    ax_aps.bar(df_P['dy'], df_P['papex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['PW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL, label="Natural release")
-    ax_aps.bar(df_P['dy'], df_P['dapex_sele_natural'], width=0.75, bottom=3, color=COLORS_APS['deepPW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
-    
+    ax_aps.bar(df_P['dy'], df_P['napex_sele_natural'], width=0.75, bottom=5, align='edge', color=COLORS_APS['newSnow'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
+    ax_aps.bar(df_P['dy'], df_P['papex_sele_natural'], width=0.75, bottom=3, align='edge', color=COLORS_APS['PW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
+    ax_aps.bar(df_P['dy'], df_P['dapex_sele_natural'], width=0.75, bottom=2, align='edge', color=COLORS_APS['deepPW'], edgecolor = C_NATURAL, linewidth=LW_NATURAL)
+    ax_aps.bar(df_P['dy'], np.nan*df_P['papex_sele_natural'], width=0.75, bottom=0, align='edge', color="white", edgecolor = C_NATURAL, linewidth=LW_NATURAL, label="Natural release")
+
     ax_aps.legend(loc='upper right')
     ### Add icons of avalanche problems
     icon_xpos = -0.03

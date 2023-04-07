@@ -1126,7 +1126,7 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
         
         if np.any(mask_vw_threshold):
             df_prof_wind = season_list_red[ind_dry]
-        
+
             ### Check surface grain type (if not 'RG' snow can be transported)
             if df_prof_wind['graintype'][0][0] in ['PP','PPgp','DF','FC','SH','DH']:
                 df_P.loc[index, 'winex'] = 1

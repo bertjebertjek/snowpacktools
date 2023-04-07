@@ -10,11 +10,7 @@ import glob
 import sys
 import configparser
 import pickle
-
-# import matplotlib.pyplot as plt
-# import matplotlib.dates as mdates
-# from matplotlib.colors import BoundaryNorm, ListedColormap
-# from matplotlib.ticker import AutoMinorLocator, FuncFormatter
+from datetime import datetime, timedelta, date
 
 from snowpacktools.avapro import find_aps, post_process_aps, visually_process_aps
 
@@ -25,6 +21,16 @@ def avapro(config_file):
 
     config = configparser.ConfigParser()
     config.read(config_file)
+
+    # anatime = datetime.strptime('0600','%H%M').time()
+    anatime = datetime.strptime('0000','%H%M').time()
+    if config.get('AVAPRO','DATE_OPERA') == 'TODAY':
+        datetime_today = datetime.combine(date.today(), anatime)
+    else:
+        date_today     = datetime.strptime(config.get('AVAPRO','DATE_OPERA'), "%Y-%m-%d").date()
+        datetime_today = datetime.combine(date_today, anatime)
+    datetime_format = '%Y-%m-%dT%Hh%M'
+    datetime_today_str = datetime.strftime(datetime_today, datetime_format)
 
     """Parameters for research applications"""
     rerun_find_WL            = int(config["AVAPRO"]["rerun_find_WL"])
@@ -93,7 +99,7 @@ def avapro(config_file):
             path_to_pro = list_pro_red[ele]
             output_path = os.path.join(config["AVAPRO"]["output_dir"],config["AVAPRO"]["output_name"])
             res         = "1d"
-            visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
+            visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
 
     print('[I]  Tracking WLs and assigning avalanche problems finished')
 
