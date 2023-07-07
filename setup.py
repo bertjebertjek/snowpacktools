@@ -26,6 +26,7 @@ setuptools.setup(
         "pandas",
         "xarray",
         "netcdf4",
-        "sympy"
+        "sympy",
+        "joblib"
     ]
 )
