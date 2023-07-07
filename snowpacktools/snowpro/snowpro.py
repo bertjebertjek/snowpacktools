@@ -202,20 +202,19 @@ def read_pro_pd(path,res='1h'):
         snowpro_list (list):    List of dfs with each df representing one snow profile (one timestamp), column=layer, row=variables
         meta_dict:              Dictionary with metadata of snow profile
     """
-
-    start_read_file = time.time()
     w, hours = pro_helper.set_resolution(res)
 
     PRO_CODE_DICT, VAR_CODES = pro_helper.get_pro_code_dict()
-    PRO_CODE_DICT['0501']    = 'height_m'
-
     variables = {}
+    VAR_CODES.append('0500')
+    PRO_CODE_DICT['0501'] = 'height_m'
     for var in VAR_CODES:
         variables[PRO_CODE_DICT[var]] = []
     
     meta_dict = {}
     
     # Open the PRO file and generate dict of variables with list of lines for each variable
+    start_read_file = time.time()
     with open(path, "r") as f:
         file_content = f.readlines()
     
@@ -269,20 +268,23 @@ def read_pro_pd(path,res='1h'):
             elif line[:4] in VAR_CODES and timestamp_of_interest:
                 variables[PRO_CODE_DICT[line[:4]]].append(line)
 
-    """Check again that all variable lists are same length... (for no snow at end of season)"""
+    # Check again that all variable lists are same length... (for no snow at end of season)
     n = len(variables['date'])
     for key in variables:
         if (n-len(variables[key]))==1:
             variables[key].append('-999')
 
-    """Remove the header data (leave this, because it covers wrong user input with var_codes)"""
+    end_read_file = time.time()
+    print('[I]  Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
+
+    # Remove the header data (leave this, because it covers wrong user input with var_codes)
     for variable in variables.keys():
         try:
             variables[variable].pop(0)
         except:
             print('[I]  Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
 
-    """Check existence of soil layers (!exist for negative height values!)"""
+    # Check existence of soil layers (!exist for negative height values!)
     line_series = variables['height_m'][0].split(",")
     nvars = int(line_series[1])
     soil_vars     = []
@@ -301,26 +303,19 @@ def read_pro_pd(path,res='1h'):
                         soil_vars.append(varname)
             print(soil_vars)
 
-    end_read_file = time.time()
-    print('[I]  Reading of lines took: {}s'.format(end_read_file-start_read_file))
-
     # Generate snow profile dataframe for each timestamp
     start_processing = time.time()
     snowpro_list = [pro_helper.snowpro_from_snapshot(i, variables, i_ground_surf, soil_vars) for i in range(len(variables['date']))]
     end_processing = time.time()
-    print('[I]  Generation of dataframes took: {}s'.format(end_processing-start_processing))
+    print('[I]  Generation of dataframes took: {}s'.format(int(end_processing-start_processing)))
 
-    start_processing = time.time()
-    """Transform SLF graintype code into ICSSG standard abbreviation"""
+    # Transform SLF graintype code into ICSSG standard abbreviation
     for df in snowpro_list:
         df['graintype'] = df['grain type (Swiss Code F1F2F3)'].apply(pro_helper.slf_graintype_to_ICSSG)
 
         i = np.arange(0,len(df)-1)
         df['bottom'] = 0
         df.loc[i,'bottom'] = df.loc[i+1,'height_m'].values
-
-    end_processing = time.time()
-    print('[I]  Further processing: {}s'.format(end_processing-start_processing))
 
     return snowpro_list, meta_dict
 
