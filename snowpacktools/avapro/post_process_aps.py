@@ -168,7 +168,7 @@ def assign_aps(df_P, config):
     df_P.loc[df_P['waponset'].isna(), 'waponset'] = pd.NaT
     
     # df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset']) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.NaN)
-    df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.NaN)
+    df_P['wapex_sele'] = np.where( (pd.to_datetime(df_P['dy']) >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.NaN)
     print('[I]  WAPs:', np.sum(df_P['wapex_sele']))
 
     # df_P['wapLWC_isrel'] = np.where(~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.NaN )

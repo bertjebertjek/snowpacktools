@@ -52,7 +52,7 @@ def find_aps(config, pro_path, smet_path):
 
     if read_in == 1:
         print('[I]  Generate list_df_pro (list of profiles)')
-        list_df_pro, meta_dict = snowpro.read_pro(pro_path)
+        list_df_pro, meta_dict = snowpro.read_pro_pd(pro_path)
         print('[I]  Generate df_met')
         df_met = snowpro.get_smet_df(smet_path)
         print('[I]  Slope Angle: {}, Aspect: {}'.format(meta_dict['SlopeAngle'],meta_dict['SlopeAzi']))

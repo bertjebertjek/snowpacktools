@@ -66,7 +66,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     icon_list = [icon_newsnow, icon_drift, icon_persistent, icon_deep_pwl, icon_wet, icon_gliding]
 
     start_readin = time.time()
-    df_pro_list_temp, meta_dict = snowpro.read_pro(path_to_pro,res=res)
+    df_pro_list_temp, meta_dict = snowpro.read_pro_pd(path_to_pro,res=res)
     end_readin = time.time()
     print('[I]  Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
 
@@ -187,11 +187,12 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     if DATETIME_STR!=None:
         datetime_format  = '%Y-%m-%dT%Hh%M'
         datetime_tmr     = datetime.strptime(DATETIME_STR, datetime_format) + timedelta(days=1)
-        datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
-        y_txt            = (np.max(h_max)+0.1) * 0.99
         ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
-        ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
         ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
+        # datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
+        # y_txt            = (np.max(h_max)+0.1) * 0.99
+        # ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
+
 
     # AXES 
     if DATE_RANGE[0] == 'NONE':
