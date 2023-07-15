@@ -45,6 +45,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     RANGE_DICT = pro_helper.get_range_dict()
 
     """Color map and preprocessing"""
+    rta = 0.75
     if var=='grain_type':
         col_dict_labels     = dict(zip(LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE))
         hatches_dict_labels = dict(zip(LABELS_GRAIN_TYPE, HATCHES_GRAIN_TYPE))
@@ -53,30 +54,35 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         col_nums = np.arange(0,n_bar)
         col_dict = dict(zip(col_nums, COLORS_GRAIN_TYPE_BAR[::-1]))
         cmap = ListedColormap([col_dict[x] for x in col_dict.keys()])
-    
     else:
-        if var in ['Sk38','Sn38']:
-            cmap_var = plt.get_cmap('plasma')
-            # cmap_var = plt.get_cmap('BuPu_r')
+        if var == 'Punstable':
+            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
+            model = joblib.load('./models/RF_instability_model.sav')
+            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            cmap_var  = pro_helper.get_Punstable_cmap()
+            var_ticks = np.arange(0,1.1,0.1)
         else:
-            # cmap_var = plt.get_cmap('BuPu')
-            cmap_var = plt.get_cmap('plasma_r')
-        clev_var = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],11)
-        cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
+            if var == 'Sk38' or var == 'Sn38':
+                cmap_var  = pro_helper.get_sk38_cmap()
+                var_ticks = np.arange(0,1.6,0.1)
+            else:
+                cmap_var = plt.get_cmap('plasma_r')
+        clev_var  = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
+        # cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
 
     plot_second_var  = False
     var_alpha        = 1
     second_vars      = ['Sk38','Sn38','Punstable']
-    hatch_second_var = '..'
+    hatch_second_var = ''
     if second_var in second_vars:
         plot_second_var = True
-        var_alpha=0.5
+        var_alpha=0.25
         if second_var == 'Sk38' or second_var == 'Sn38':
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
         elif second_var == 'Punstable':
             """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-            model  = joblib.load('./models/RF_instability_model.sav')
+            model = joblib.load('./models/RF_instability_model.sav')
             profs = instability_rfm_mayer.calc_punstable(profs, model)
             cmap_var2        = pro_helper.get_Punstable_cmap()
             second_var_ticks = np.arange(0,1.1,0.1)
@@ -108,17 +114,19 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
                 for row in range(0,len(prof['graintype'])):
                     cols.append(col_dict_labels[prof['graintype'][row][0]])
                     hatches.append(hatches_dict_labels[prof['graintype'][row][0]])
-                bar_plot = ax.bar(ts, prof['thickness'], width=w, bottom=prof['bottom'], align='edge', color=cols, hatch=hatches, alpha=var_alpha) # label=labels[i])
+                ax.bar(ts, prof['thickness'], width=w, bottom=prof['bottom'], align='edge', color=cols, hatch=hatches, alpha=var_alpha) # label=labels[i])
             else:
+                thickness = np.where(prof['RTA']>=rta, prof['thickness'], np.nan)
+                bottom    = np.where(prof['RTA']>=rta, prof['bottom'],    np.nan)
+
                 var_data = (prof[var]-RANGE_DICT[var][0])/(RANGE_DICT[var][1]-RANGE_DICT[var][0])
-                cols = cmap_var(var_data)
-                bar_plot = ax.bar(ts, prof['thickness'], width=w, bottom=prof['bottom'], align='edge', color=cols)
-            
+                cols     = cmap_var(var_data)
+                ax.bar(ts, prof['height'][-1], width=w, bottom=0, align='edge', color='lightgrey', alpha=1)
+                ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols, alpha=1)
+                
             
             if plot_second_var:
                 """Filter data with RTA"""
-                #rta = 0.85
-                rta = 0.85
                 thickness = np.where(prof['RTA']>=rta, prof['thickness'], np.nan)
                 bottom    = np.where(prof['RTA']>=rta, prof['bottom'],    np.nan)
                 hatches   = np.where(prof['RTA']>=rta, hatch_second_var, np.nan)
@@ -126,15 +134,12 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
                 var_data2 = np.where(prof['RTA']>=rta, prof[second_var],  np.nan)
                 var_data2 = (var_data2-RANGE_DICT[second_var][0])/(RANGE_DICT[second_var][1]-RANGE_DICT[second_var][0])
                 cols2 = cmap_var2(var_data2)
-                # ax.bar(ts, prof['thickness'], width=w, bottom=prof['bottom'], align='edge', color=cols2, alpha=0.8)
                 ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols2, hatch=hatches, alpha=1)
         else:
             h_max.append(0)
 
     """Line along snow surface"""
-    if second_var!='NONE':
-        # h_max = np.where(h_max == np.nan, 0, h_max)
-        ax.plot(dates,h_max,ds='steps-post',lw=0.8,color='black', ls='--', alpha=0.67)
+    ax.plot(dates,h_max,ds='steps-post',lw=0.8,color='black', ls='--', alpha=0.67)
 
     """Hardness profile to the right"""
     if DATETIME_STR!=None:
@@ -180,8 +185,8 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var,norm=cnorm_var,levels=clev_var, extend='both') #extend='max'
-        cbar = fig.colorbar(contf,ax=ax, location='left', pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var, extend='both') #extend='max'
+        cbar = fig.colorbar(contf,ax=ax, location='left', ticks=var_ticks, pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar.set_label(var)
         # cbar.set_label("SK38 / -")
     
