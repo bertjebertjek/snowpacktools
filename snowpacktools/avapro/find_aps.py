@@ -51,11 +51,11 @@ def find_aps(config, pro_path, smet_path):
     # thresholds_aps['release'] = release
 
     if read_in == 1:
-        print('[I]  Generate list_df_pro (list of profiles)')
+        print('[i]  Generate list_df_pro (list of profiles)')
         list_df_pro, meta_dict = snowpro.read_pro_pd(pro_path)
-        print('[I]  Generate df_met')
+        print('[i]  Generate df_met')
         df_met = snowpro.get_smet_df(smet_path)
-        print('[I]  Slope Angle: {}, Aspect: {}'.format(meta_dict['SlopeAngle'],meta_dict['SlopeAzi']))
+        print('[i]  Slope Angle: {}, Aspect: {}'.format(meta_dict['SlopeAngle'],meta_dict['SlopeAzi']))
 
         # ---- DUMPING PKL FILES OF PROFILES ---- #
         if dump_profs_and_smet:
@@ -66,7 +66,7 @@ def find_aps(config, pro_path, smet_path):
                 pickle.dump(df_met, f)
     else :
         # ---- READING PKL FILES OF PROFILES ---- #
-        print('[I]  Read in existing list_df_pro and df_met')
+        print('[i]  Read in existing list_df_pro and df_met')
         list_df_pro = pickle.load(open('./list_df_pro', "rb"))
         #meta_dict = pickle.load(open('./meta_dict', "rb"))
         df_met = pickle.load(open('./df_met',"rb"))
@@ -199,11 +199,11 @@ def find_aps(config, pro_path, smet_path):
 
     """Initialization"""
     if initilization_type=='profile':
-        print("[I]  Startup-Algorithm: Initializing PAPs and DAPs with RTA")
+        print("[i]  Startup-Algorithm: Initializing PAPs and DAPs with RTA")
         df_P = initialize_with_RTA(config,season_list,df_met,df_P)
 
     """Iteration"""
-    print("[I]  Start of iteration")
+    print("[i]  Start of iteration")
     # for index, row in islice(df_P.iterrows(), 1, None):
     for index in range(1,len(df_P)):
         ### Index handling
@@ -502,7 +502,7 @@ def initialize_with_RTA(config,season_list,df_met,df_P):
 
         i_old_surf = i_layer
     else:
-        print('[I]  No NAP or PAP from initial snow profile')
+        print('[i]  No NAP or PAP from initial snow profile')
         i_old_surf = 0
         pap_range_below_surf = 0
 
@@ -527,7 +527,7 @@ def initialize_with_RTA(config,season_list,df_met,df_P):
     if len(DAP_up_ini) > 0:
         df_P.loc[0,'dapex'] = 1
     else:
-        print('[I]  No DAP from initial snow profile')
+        print('[i]  No DAP from initial snow profile')
 
     """Initialize all DAP parameters with values or NANs for further processing"""
     if df_P.loc[0, 'papex'] != 1:

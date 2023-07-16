@@ -385,7 +385,7 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
     """CHECK FOR SLAB SUPPORT AND SUSTAINED (DYNAMIC) PROPAGATION"""
     ### Calc tensile support of the slab
     if calcFEM == 1:
-        print('[I]  FEM batch not implemented')
+        print('[i]  FEM batch not implemented')
         #  [tcr,tenscrit,slablaythick]=get_ts_rb17(H(1:end-2),D,E,TS,Ltot,alp,rc); % check threshold for critical in the routine
     
     ### Analytic solution 

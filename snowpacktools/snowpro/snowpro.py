@@ -87,7 +87,7 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                 keys_to_drop = []
                 for varcode in VAR_CODES:
                     if varcode not in VAR_CODES_PROF:
-                        print('[I]  Variable ', varcode, ' is not found in the header of this .PRO file. It is dropped.')
+                        print('[i]  Variable ', varcode, ' is not found in the header of this .PRO file. It is dropped.')
                         keys_to_drop.append(varcode)
                 
                 for key in keys_to_drop:
@@ -126,15 +126,15 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
     i_ground_surf = 0
     if nheight > 0:
         if profs[first_date]['height'][0] < 0:
-            print('[I]  Soil layers detected')
+            print('[i]  Soil layers detected')
             soil_detected = True
             i_ground_surf = list(profs[first_date]['height']).index(0.0)
-            print('[I]  i_ground_surf: ', i_ground_surf)
+            print('[i]  i_ground_surf: ', i_ground_surf)
             for varname in profs[first_date].keys():
                 n = len(profs[first_date][varname])
                 if n+1==nheight:
                     soil_vars.append(varname)
-            print('[I]  Variables with soil layers: ', soil_vars)
+            print('[i]  Variables with soil layers: ', soil_vars)
     
     if keep_soil==False and soil_detected:
         for ts in profs.keys():
@@ -233,7 +233,7 @@ def read_pro_pd(path,res='1h'):
             keys_to_drop = []
             for key in variables:
                 if len(variables[key]) == 0:
-                    print('[I]  Variable ', key, ' is not found in the header of this .PRO file. It is dropped.')
+                    print('[i]  Variable ', key, ' is not found in the header of this .PRO file. It is dropped.')
                     keys_to_drop.append(key)
             
             for key in keys_to_drop:
@@ -275,14 +275,14 @@ def read_pro_pd(path,res='1h'):
             variables[key].append('-999')
 
     end_read_file = time.time()
-    print('[I]  Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
+    print('[i]  Reading of lines took: {}s'.format(int(end_read_file-start_read_file)))
 
     # Remove the header data (leave this, because it covers wrong user input with var_codes)
     for variable in variables.keys():
         try:
             variables[variable].pop(0)
         except:
-            print('[I]  Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
+            print('[i]  Attention: No values for', variable,'in your .pro file. Remove it out of var_code dictionary')
 
     # Check existence of soil layers (!exist for negative height values!)
     line_series = variables['height_m'][0].split(",")
@@ -293,7 +293,7 @@ def read_pro_pd(path,res='1h'):
         datapoints = line_series[-nvars:]
         datapoints = list(map(float, datapoints))
         if datapoints[0] < 0:
-            print('[I]  Soil layers detected. The following variables contain values for soil:')
+            print('[i]  Soil layers detected. The following variables contain values for soil:')
             i_ground_surf = datapoints.index(0.0)
             for varname in variables.keys():
                 if varname != 'date':
@@ -307,7 +307,7 @@ def read_pro_pd(path,res='1h'):
     start_processing = time.time()
     snowpro_list = [pro_helper.snowpro_from_snapshot(i, variables, i_ground_surf, soil_vars) for i in range(len(variables['date']))]
     end_processing = time.time()
-    print('[I]  Generation of dataframes took: {}s'.format(int(end_processing-start_processing)))
+    print('[i]  Generation of dataframes took: {}s'.format(int(end_processing-start_processing)))
 
     # Transform SLF graintype code into ICSSG standard abbreviation
     for df in snowpro_list:

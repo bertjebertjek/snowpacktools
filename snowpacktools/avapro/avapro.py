@@ -44,11 +44,16 @@ def avapro(config_file):
     rerun_assign_avaprobs    = int(config["AVAPRO"]["rerun_assign_avaprobs"])
     run_visualize_avaprobs   = int(config["AVAPRO"]["run_visualize_avaprobs"])
 
-    """Get list of available files"""
-    SIM_FOLDER = config.get('AVAPRO', 'SIM_FOLDER_PATH')
-    OUTPUT_DIR = os.path.join(SIM_FOLDER,'avapro-output/')
-    list_pro  = sorted(glob.glob(SIM_FOLDER + "/*.pro"))
-    list_smet = sorted(glob.glob(SIM_FOLDER + "/*.smet"))
+    """Input directories: Get list of available files"""
+    SNP_DIR   = config.get('AVAPRO', 'SNP_DIR')
+    list_pro  = sorted(glob.glob(SNP_DIR + "/*.pro"))
+    list_smet = sorted(glob.glob(SNP_DIR + "/*.smet"))
+
+    """Output directories (one for pickle files, one for figures)"""
+    OUTPUT_DIR      = config.get('AVAPRO', 'OUTPUT_DIR')
+    OUTPUT_DIR_FIGS = config.get('AVAPRO', 'OUTPUT_DIR_FIGS')
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR_FIGS, exist_ok=True)
 
     """Select certain aspects or filter for other things"""
     # SLOPE_ASPECTS=flat N E S W
@@ -61,60 +66,42 @@ def avapro(config_file):
         raise ValueError('[E]   No input, please check your input folder')
     else:
         raise ValueError('[E]   Number of .pro files and .smet files does not match')
-        
-     
-
-    """Define output folder"""
-    isExist = os.path.exists(OUTPUT_DIR)
-    if not isExist:
-        os.mkdir(OUTPUT_DIR)
-        print('[I]  Output directory created')
-    else:
-        print('[I]  Output directory already exists')
-
 
     """Find potential weak layers (APS)"""
-    print("[I]  Pro-list: ", list_pro_red)
+    print("[i]  Pro-list: ", list_pro_red)
     for ele in range(len(list_pro_red)):
-        ele_name = list_pro_red[ele].split('/')[-1].split('.')[0]
-        # print("[I]  Starting with PRO-file: ", list_pro_red[ele])
-        print("[I]  Starting with PRO-file: ", ele_name)
+        pro_name = list_pro_red[ele].split('/')[-1].split('.')[0]
+        print("[i]  Running AVAPRO on PRO-file: ", pro_name)
         if rerun_find_WL == 1:
-            print('[I]  Generate data from pro and smet files')
+            print('[i]  Generate data from pro and smet files')
             df_met, df_P, meta_dict = find_aps.find_aps(config, list_pro_red[ele], list_smet_red[ele])
             
             """Save as pkl file"""
-            df_P.to_pickle(os.path.join(OUTPUT_DIR,ele_name + '_df_P.pkl'))
-            df_met.to_pickle(os.path.join(OUTPUT_DIR,ele_name + '_df_met.pkl'))
+            df_P.to_pickle(os.path.join(OUTPUT_DIR,pro_name + '_df_P.pkl'))
+            df_met.to_pickle(os.path.join(OUTPUT_DIR,pro_name + '_df_met.pkl'))
         else:
-            print('[I]  Load data from pkl files')
-            df_P = pickle.load(open(os.path.join(OUTPUT_DIR, ele_name + '_df_P.pkl'), "rb"))
-            df_met = pickle.load(open(os.path.join(OUTPUT_DIR, ele_name + '_df_met.pkl'), "rb"))
+            print('[i]  Load data from pkl files')
+            df_P = pickle.load(open(os.path.join(OUTPUT_DIR, pro_name + '_df_P.pkl'), "rb"))
+            df_met = pickle.load(open(os.path.join(OUTPUT_DIR, pro_name + '_df_met.pkl'), "rb"))
 
         """Assign Avalanche Problems (APs)"""
         if rerun_assign_avaprobs == 1:
-            print('[I]  Assigning avalanche problems from pkl files of tracked WLs')
+            print('[i]  Assigning avalanche problems from pkl files of tracked WLs')
             df_P = post_process_aps.assign_aps(df_P,config)
-            df_P.to_pickle(os.path.join(OUTPUT_DIR, ele_name + '_df_P_APS.pkl'))
+            df_P.to_pickle(os.path.join(OUTPUT_DIR, pro_name + '_df_P_APS.pkl'))
         else:
-            print('[I]  Loading avalanche problems from pkl files')
-            df_P = pickle.load(open(os.path.join(OUTPUT_DIR, ele_name + '_df_P_APS.pkl'), "rb"))
+            print('[i]  Loading avalanche problems from pkl files')
+            df_P = pickle.load(open(os.path.join(OUTPUT_DIR, pro_name + '_df_P_APS.pkl'), "rb"))
         
         """Visualize Avalanche Problems (APs)"""
         if run_visualize_avaprobs == 1:
-            print('[I]  Visualizing avalanche problems from pkl files of tracked WLs')
-            path_to_pro   = list_pro_red[ele]
-            if config["AVAPRO"]["output_name"] == 'NONE' or config["AVAPRO"]["output_dir"] == 'NONE':
-                output_path   = os.path.join(OUTPUT_DIR, ele_name + '_avapro.png')
-            else:
-                output_path   = os.path.join(config["AVAPRO"]["output_dir"],config["AVAPRO"]["output_name"])
-                folder_exists = os.path.exists(config["AVAPRO"]["output_dir"])
-                if not folder_exists:
-                    os.mkdir(config["AVAPRO"]["output_dir"])
-            res           = "1d"
+            print('[i]  Visualizing avalanche problems from pkl files of tracked WLs')
+            path_to_pro = list_pro_red[ele]
+            output_path = os.path.join(OUTPUT_DIR_FIGS, pro_name + ".png")
+            res         = "1d"
             visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
 
-    print('[I]  Tracking WLs and assigning avalanche problems finished')
+    print('[i]  Tracking WLs and assigning avalanche problems finished')
 
 
 if __name__ == "__main__":

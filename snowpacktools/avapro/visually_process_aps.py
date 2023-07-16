@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import xarray # needed for time axis
 from datetime import datetime, timedelta
+import joblib
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -22,8 +23,7 @@ from matplotlib.ticker import AutoMinorLocator, FuncFormatter
 import matplotlib.image as image
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
-from snowpacktools.snowpro import snowpro
-from snowpacktools.snowpro import pro_helper
+from snowpacktools.snowpro import snowpro, pro_helper, instability_rfm_mayer
 
 
 def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_path='output/', var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE']):
@@ -65,53 +65,62 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     icon_gliding    = image.imread(icon_gliding)
     icon_list = [icon_newsnow, icon_drift, icon_persistent, icon_deep_pwl, icon_wet, icon_gliding]
 
-    start_readin = time.time()
-    df_pro_list_temp, meta_dict = snowpro.read_pro_pd(path_to_pro,res=res)
-    end_readin = time.time()
-    print('[I]  Reading of PRO file completed in {}s'.format(int(end_readin-start_readin)))
+    start_time = time.time()
+    profs, meta_dict = snowpro.read_pro(path_to_pro, res=res, keep_soil=False, consider_surface_hoar=True)
 
     # Filter for certain resolution and time frame
-    w, hours = pro_helper.set_resolution(res)
+    w, _ = pro_helper.set_resolution(res)
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
     RANGE_DICT = pro_helper.get_range_dict()
 
-    df_pro_list = []
-    for df in df_pro_list_temp:
-        if df.date.iloc[0].hour in hours:
-        # if (df.iloc[0].date.strftime('%m.%d') > season_start) or (df.iloc[0].dates.strftime('%m.%d') < season_end):
-            df_pro_list.append(df)
-
-    # COLOR MAP AND PREPROCESSING
+    """Color map and preprocessing"""
+    rta = 0.75
     if var=='grain_type':
         col_dict_labels     = dict(zip(LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE))
         hatches_dict_labels = dict(zip(LABELS_GRAIN_TYPE, HATCHES_GRAIN_TYPE))
 
-        n_bar    = len(LABELS_GRAIN_TYPE_BAR)
+        n_bar = len(LABELS_GRAIN_TYPE_BAR)
         col_nums = np.arange(0,n_bar)
         col_dict = dict(zip(col_nums, COLORS_GRAIN_TYPE_BAR[::-1]))
-        cmap     = ListedColormap([col_dict[x] for x in col_dict.keys()])
-    
+        cmap = ListedColormap([col_dict[x] for x in col_dict.keys()])
     else:
-        if var in ['Sk38','Sn38']:
-            cmap_var = plt.get_cmap('plasma')
-            # cmap_var = plt.get_cmap('BuPu_r')
+        if var == 'Punstable':
+            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
+            model = joblib.load('./models/RF_instability_model.sav')
+            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            cmap_var  = pro_helper.get_Punstable_cmap()
+            var_ticks = np.arange(0,1.1,0.1)
         else:
-            # cmap_var = plt.get_cmap('BuPu')
-            cmap_var = plt.get_cmap('plasma_r')
-        clev_var = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],11)
-        cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
+            if var == 'Sk38' or var == 'Sn38':
+                cmap_var  = pro_helper.get_sk38_cmap()
+                var_ticks = np.arange(0,1.6,0.1)
+            else:
+                cmap_var = plt.get_cmap('plasma_r')
+        clev_var  = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
+        # cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
 
-    var_alpha=1
-    if second_var!='NONE':#
-        if second_var in ['RTA']:
-            cmap_var2 = pro_helper.get_whiteout_cmap()
-            var_alpha=0.5
+    plot_second_var  = False
+    var_alpha        = 1
+    second_vars      = ['Sk38','Sn38','Punstable']
+    hatch_second_var = ''
+    if second_var in second_vars:
+        plot_second_var = True
+        var_alpha=0.25
+        if second_var == 'Sk38' or second_var == 'Sn38':
+            cmap_var2        = pro_helper.get_sk38_cmap()
+            second_var_ticks = np.arange(0,1.6,0.1)
+        elif second_var == 'Punstable':
+            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
+            model = joblib.load('./models/RF_instability_model.sav')
+            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            cmap_var2        = pro_helper.get_Punstable_cmap()
+            second_var_ticks = np.arange(0,1.1,0.1)
         else:
             # cmap_var2  = plt.get_cmap('gist_gray')
             cmap_var2 = pro_helper.get_whiteout_cmap(reverse=True)
-            var_alpha=0.5
-        clev_var2 = np.linspace(RANGE_DICT[second_var][0],RANGE_DICT[second_var][1],11)
-        cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
+            
+        clev_var2 = np.linspace(RANGE_DICT[second_var][0],RANGE_DICT[second_var][1],100) # 11 discrete colorbar
+        # cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     # VISUALIZATION
     fig, ((ax0, ax),(ax1,ax_aps)) = plt.subplots(2,2,figsize=(12,7),sharex=True, gridspec_kw={'width_ratios':[1,15],'hspace':0.03,'wspace':0.03}) # 'height_ratios':[1,1]
@@ -120,43 +129,61 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
 
     h_max = []
     dates = []
-    for df in df_pro_list:
-        h_max.append(df.loc[0,'height_m'])
-        dates.append(df.loc[0,'date'])
+    for i, ts in enumerate(profs):
+        prof = profs[ts]
+        dates.append(ts)
+        if len(prof['height']>0):
+            h_max.append(prof['height'][-1])
+                
+            if var=='grain_type':
+                cols   =[]
+                hatches=[]
+                for row in range(0,len(prof['graintype'])):
+                    cols.append(col_dict_labels[prof['graintype'][row][0]])
+                    hatches.append(hatches_dict_labels[prof['graintype'][row][0]])
+                ax.bar(ts, prof['thickness'], width=w, bottom=prof['bottom'], align='edge', color=cols, hatch=hatches, alpha=var_alpha) # label=labels[i])
+            else:
+                thickness = np.where(prof['RTA']>=rta, prof['thickness'], np.nan)
+                bottom    = np.where(prof['RTA']>=rta, prof['bottom'],    np.nan)
+
+                var_data = (prof[var]-RANGE_DICT[var][0])/(RANGE_DICT[var][1]-RANGE_DICT[var][0])
+                cols     = cmap_var(var_data)
+                ax.bar(ts, prof['height'][-1], width=w, bottom=0, align='edge', color='lightgrey', alpha=1)
+                ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols, alpha=1)
+                
             
-        if var=='grain_type':
-            cols=[]
-            hatches=[]
-            for row in range(0,len(df)):
-                cols.append(col_dict_labels[df.loc[row,'graintype'][0]])
-                hatches.append(hatches_dict_labels[df.loc[row,'graintype'][0]])
-            bar_plot = ax.bar(df.date[0], df['thickness_m'], width=w, bottom=df['bottom'], align='edge', color=cols, hatch=hatches, alpha=1) # label=labels[i])
+            if plot_second_var:
+                """Filter data with RTA"""
+                thickness = np.where(prof['RTA']>=rta, prof['thickness'], np.nan)
+                bottom    = np.where(prof['RTA']>=rta, prof['bottom'],    np.nan)
+                hatches   = np.where(prof['RTA']>=rta, hatch_second_var, np.nan)
+
+                var_data2 = np.where(prof['RTA']>=rta, prof[second_var],  np.nan)
+                var_data2 = (var_data2-RANGE_DICT[second_var][0])/(RANGE_DICT[second_var][1]-RANGE_DICT[second_var][0])
+                cols2 = cmap_var2(var_data2)
+                ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols2, hatch=hatches, alpha=1)
         else:
-            var_data = (df[var].values-RANGE_DICT[var][0])/(RANGE_DICT[var][1]-RANGE_DICT[var][0])
-            cols = cmap_var(var_data)
-            bar_plot = ax.bar(df.date[0], df['thickness_m'], width=w, bottom=df['bottom'], align='edge', color=cols)
-        
-        if second_var!='NONE':
-            var_data2 = (df[second_var].values-RANGE_DICT[second_var][0])/(RANGE_DICT[second_var][1]-RANGE_DICT[second_var][0])
-            cols2 = cmap_var2(var_data2)
-            ax.bar(df.date[0], df['thickness_m'], width=w, bottom=df['bottom'], align='edge', color=cols2, alpha=0.8)
+            h_max.append(0)
 
-    # Line along snow surface
-    if second_var!='NONE':
-        # h_max = np.where(h_max == np.nan, 0, h_max)
-        ax.plot(dates,h_max,ds='steps-post',lw=0.8,color='black', ls='--', alpha=0.67)
+    """Line along snow surface"""
+    ax.plot(dates,h_max,ds='steps-post',lw=0.8,color='black', ls='--', alpha=0.67)
 
-    # COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)
+    """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
+    ## !!!ax0 is used and fraction changed compared to snowpro plot for alignment with ava problems!!!
     if second_var!='NONE':
          # - Colorbar for second layer - # 
         n_var = 9
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var2,norm=cnorm_var2,levels=clev_var2, extend='both') #extend='max'
-        cbar2 = fig.colorbar(contf,ax=ax0, location='left', pad=-0.06, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        # contf = ax.contourf(lulu,cmap=cmap_var2,norm=cnorm_var2,levels=clev_var2, extend='both') #extend='max'
+        contf = ax.contourf(lulu, cmap=cmap_var2, levels=clev_var2, hatches=hatch_second_var)
+        cbar2 = fig.colorbar(contf,ax=ax0, location='left', pad=-0.06, ticks=second_var_ticks, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar2.set_label(second_var)
         # cbar.set_label("SK38 / -")
+        meta_x = 0.24
+    else:
+        meta_x = 0.17
 
     if var=='grain_type':
         lulu = np.zeros((n_bar,n_bar))
@@ -172,15 +199,15 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
 
         # contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins) # just for colorbar
         contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins,hatches=HATCHES_GRAIN_TYPE_BAR[::-1], alpha=var_alpha) # just for colorbar
-        cbar = fig.colorbar(contf, ax=ax0, format=fmt, ticks=tickz,location='left', fraction=1) # pad=0.01, shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        cbar = fig.colorbar(contf, ax=ax0, format=fmt, ticks=tickz,location='left', fraction=1) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar.ax.grid(visible=False)
     else:
         n_var = 9
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var,norm=cnorm_var,levels=clev_var, extend='both') #extend='max'
-        cbar = fig.colorbar(contf,ax=ax0, location='left', pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var, extend='both') #extend='max'
+        cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar.set_label(var)
         # cbar.set_label("SK38 / -")
     
@@ -193,10 +220,9 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         # y_txt            = (np.max(h_max)+0.1) * 0.99
         # ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
 
-
-    # AXES 
+    """Axes and labels""" 
     if DATE_RANGE[0] == 'NONE':
-        ax.set_xlim(df_pro_list[0].date[0],df_pro_list[-1].date[0])
+        ax.set_xlim(dates[0],dates[-1])
     else:
         # DATETIME_FORMAT  = '%Y-%m-%d' # +01:00
         # date_of_prof     = datetime.strptime(PROF_META['datetime'][0:10], DATETIME_FORMAT)
@@ -219,7 +245,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
              verticalalignment='top', fontsize=10, transform=ax.transAxes) # ma='left'
     
     
-    """Visusalize APs (second axis)"""
+    """Visualize APs (second axis)"""
     df_P['napex_sele_natural'] = np.where(df_P['napex_sele_natural']==1, df_P['napex_sele_natural'], np.nan)
     df_P['papex_sele_natural'] = np.where(df_P['papex_sele_natural']==1, df_P['papex_sele_natural'], np.nan)
     df_P['dapex_sele_natural'] = np.where(df_P['dapex_sele_natural']==1, df_P['dapex_sele_natural'], np.nan)
@@ -256,11 +282,8 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         ax_aps.add_artist(ab)
     ax_aps.yaxis.set_ticklabels([])
 
-    # --- Save figure --- #    
     fig.tight_layout()
-    print('[I]  Saving AP and snowpack evolution figure')
     fig.savefig(output_path, facecolor='w', edgecolor='w',
                 format='png', dpi=300, bbox_inches='tight')
     plt.close(fig)
-    end_plotting = time.time()
-    print('[I]  Visualization of APs and snowpack evolution completed in {}s'.format(int(end_plotting-end_readin)))
+    print('[i]  Visualization of APs and snowpack evolution completed in {}s'.format(int(time.time()-start_time)))

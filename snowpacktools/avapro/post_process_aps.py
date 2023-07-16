@@ -60,8 +60,8 @@ def assign_aps(df_P, config):
     df_P['papex_sele_trigger'] = np.where ((df_P['papex_sele'] == 1) & ((df_P['papPRO_isrel'] > propthrshpap) | (df_P['papINI_isrel'] >  inithrshpap)  ), 0, df_P['papex_sele']  )
     df_P['papdycrit_trigger'] =  np.where ((df_P['papex_sele'] == 1) & ((df_P['papPRO_isrel'] <= propthrshpap)  & (df_P['papINI_isrel'] <= inithrshpap)  ),1,0)    
 
-    print('[I]  PAPs (trigger):',np.sum(df_P['papex_sele_trigger']))
-    print('[I]  PAPs (natural):',np.sum(df_P['papex_sele_natural']))
+    print('[i]  PAPs (trigger):',np.sum(df_P['papex_sele_trigger']))
+    print('[i]  PAPs (natural):',np.sum(df_P['papex_sele_natural']))
 
 
     """Look at NAPs of season"""
@@ -94,8 +94,8 @@ def assign_aps(df_P, config):
     # print(np.sum((df_P['napINI_isrel'] <= inithrshnap) & (df_P['napPRO_isrel'] <= propthrshnap)))
     # print(np.sum(df_P['napdycrit']))
 
-    print('[I]  NAPs (trigger):',np.sum(df_P['napex_sele_trigger']))
-    print('[I]  NAPs (natural):',np.sum(df_P['napex_sele_natural']))
+    print('[i]  NAPs (trigger):',np.sum(df_P['napex_sele_trigger']))
+    print('[i]  NAPs (natural):',np.sum(df_P['napex_sele_natural']))
 
     """Look at DAPs of season"""
     df_P['dap_isrel'] = [[0]*50 for _ in range(len(df_P))]
@@ -141,8 +141,8 @@ def assign_aps(df_P, config):
     ### Artifical (triggered) release criteria
     df_P['dapex_sele_trigger'] = np.where((df_P['dapex_isrel_red']== 1) & (~((df_P['papdycrit_trigger']  == 1) | (df_P['napdycrit_trigger'] == 1))),  0, df_P['dapex_isrel_red'])
 
-    print('[I]  DAPs (trigger):', np.sum(df_P['dapex_sele_trigger']))
-    print('[I]  DAPs (natural):', np.sum(df_P['dapex_sele_natural']))
+    print('[i]  DAPs (trigger):', np.sum(df_P['dapex_sele_trigger']))
+    print('[i]  DAPs (natural):', np.sum(df_P['dapex_sele_natural']))
     
     """Look at WAPs of season"""
     ### Define a variable that indicates if LWC increased with respect to the previous day
@@ -169,17 +169,17 @@ def assign_aps(df_P, config):
     
     # df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset']) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.NaN)
     df_P['wapex_sele'] = np.where( (pd.to_datetime(df_P['dy']) >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.NaN)
-    print('[I]  WAPs:', np.sum(df_P['wapex_sele']))
+    print('[i]  WAPs:', np.sum(df_P['wapex_sele']))
 
     # df_P['wapLWC_isrel'] = np.where(~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.NaN )
     # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] ==1, df_P['wapLWC_isrel'] / lwcthrsh_0, df_P['wapLWC_isrel'])
     # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] > 1, df_P['wapLWC_isrel'] / lwcthrsh_1, df_P['wapLWC_isrel'])
-    # print('[I]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel'] > 0]))
+    # print('[i]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel'] > 0]))
     
 
     """Wind (WSAP/winex) based on VW and loose snow"""
     # df_P['winex_sele_trigger'] = df_P['winex']
-    print('[I]  WSAPs:', np.sum(df_P['winex']))
+    print('[i]  WSAPs:', np.sum(df_P['winex']))
 
     ### (WE ALSO NEED TO GET THE WIND INDICATOR FOR WIND LOADING (rather than new snow loading -- pure wind slab case))
     ### (Days with neither pap nor nap, but wind loading)

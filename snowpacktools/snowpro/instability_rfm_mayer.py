@@ -39,7 +39,7 @@ def calc_punstable(profs, model):
 
         features = np.concatenate([features, df_features_prof], axis=0)
 
-    print('[I]  Stacking features for Punstable RF-model (Mayer et al., 2022): {}s'.format(time.time()-start_process))
+    print('[i]  Stacking features for Punstable RF-model (Mayer et al., 2022): {}s'.format(time.time()-start_process))
     # print('Number of timestamps: ', len(list(profs)))
     # print('Number of indices:    ', len(iprofs))
 
@@ -54,7 +54,7 @@ def calc_punstable(profs, model):
     feature_mask = ~np.isnan(features).any(axis = 1)
     Punstable[feature_mask] = model.predict_proba(features[feature_mask])[:,0]
 
-    print('[I]  RF-model prediction: {}s'.format(time.time()-start_process))
+    print('[i]  RF-model prediction: {}s'.format(time.time()-start_process))
     
     i0 = 0
     for i,ts in enumerate(profs):
@@ -222,13 +222,13 @@ def create_RFprof(prof, slopeangle, model):
     df = features
     
     end_process = time.time()
-    # print('[I]  comp_features: {}s'.format(end_process-start_process))
+    # print('[i]  comp_features: {}s'.format(end_process-start_process))
 
     # print(features)
     start_process = time.time()
     df['P_unstable'] = comp_rf_probability(features, model)
     end_process = time.time()
-    # print('[I]  comp_rf_prob: {}s'.format(end_process-start_process))
+    # print('[i]  comp_rf_prob: {}s'.format(end_process-start_process))
 
     #get some additional features for plotting
     df['layer_top']  = prof['height']

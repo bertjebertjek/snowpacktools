@@ -101,7 +101,6 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
 
     h_max = []
     dates = []
-
     for i, ts in enumerate(profs):
         prof = profs[ts]
         dates.append(ts)
@@ -227,11 +226,11 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     else:
         fig_title = output_name
     fig.tight_layout()
-    print(f'[I]  Saving figure "{fig_title}" to "{output_dir}".')
+    print(f'[i]  Saving figure "{fig_title}" to "{output_dir}".')
     fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
                 format='png', dpi=150, bbox_inches='tight')
 
-    print('[I]  Visualization of snowpack evolution completed in {}s'.format(time.time()-start_time))
+    print('[i]  Visualization of snowpack evolution completed in {}s'.format(time.time()-start_time))
 
 
 def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SCHEME='IACS2', ax=None):
@@ -253,10 +252,10 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     
     ts = datetime.strptime(DATETIME_STR, datetime_format)
     if ts in profs.keys():
-        print('[I]  Timestamp {} found. Hardness profile will be plotted.'.format(DATETIME_STR))
+        print('[i]  Timestamp {} found. Hardness profile will be plotted.'.format(DATETIME_STR))
     else:
         ts = profs.key()[-1]
-        print('[I]  Timestamp {} not found. Hardness profile will be plotted for last timestamp.'.format(DATETIME_STR))
+        print('[i]  Timestamp {} not found. Hardness profile will be plotted for last timestamp.'.format(DATETIME_STR))
         DATETIME_STR = datetime.strftime(ts, datetime_format)
 
     """Use current ts from now on"""
@@ -361,7 +360,7 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
         # --- Save figure --- #
         fig_title = 'snow-profile-' + meta_dict['StationName'] + '-' +  DATETIME_STR + '.png'
         fig.tight_layout()
-        print(f'[I]  Saving figure "{fig_title}" to "{output_dir}".')
+        print(f'[i]  Saving figure "{fig_title}" to "{output_dir}".')
         fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
                     format='png', dpi=150)
     else:
