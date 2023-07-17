@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import xarray
 import time
 import joblib
 
@@ -19,7 +20,7 @@ from matplotlib.ticker import AutoMinorLocator, FuncFormatter
 from snowpacktools.snowpro import snowpro, pro_helper, instability_rfm_mayer
 
 
-def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grain_type', res='1h', second_var='NONE', COLOR_SCHEME='IACS2', DATE_RANGE=['NONE','NONE'],output_name='NONE'):
+def plot_snp_evo(config, DATETIME_STR=None):
     """Plots snowpack evolution (PRO-file). Different variables or grain type can be visualized and overlayed.
     
     Arguments:
@@ -35,12 +36,21 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
         Figure
     """
 
+    var          = config.get('SNOWPRO-EVO', 'VAR')
+    second_var   = config.get('SNOWPRO-EVO','SECOND_VAR')
+    COLOR_SCHEME = config.get('SNOWPRO','COLOR_SCHEME')
+    DATE_RANGE   = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO', 'END_DATE')]
+    try:
+        output_name = config.get('SNOWPRO', 'OUTPUT_NAME')
+    except:
+        output_name = 'NONE'
+
     """Read .pro file"""
     start_time= time.time()
-    profs, meta_dict = snowpro.read_pro(path_to_pro, res=res, keep_soil=False, consider_surface_hoar=True)
+    profs, meta_dict = snowpro.read_pro(config.get('SNOWPRO','PRO_FILE_PATH'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), keep_soil=False, consider_surface_hoar=True)
 
     """Filter for certain resolution and time frame"""
-    w, __ = pro_helper.set_resolution(res)
+    w, __ = pro_helper.set_resolution(config.get('SNOWPRO-EVO', 'RESOLUTION'))
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
     RANGE_DICT = pro_helper.get_range_dict()
 
@@ -142,7 +152,7 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
 
     """Hardness profile to the right"""
     if DATETIME_STR!=None:
-        ax_prof, DATETIME_STR = plot_single_profile(path_to_pro,DATETIME_STR,COLOR_SCHEME=COLOR_SCHEME,ax=ax_prof)
+        ax_prof, DATETIME_STR = plot_single_profile(config,ax=ax_prof)
         datetime_format = '%Y-%m-%dT%Hh%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
         ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
@@ -193,10 +203,16 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     if DATE_RANGE[0] == 'NONE':
         ax.set_xlim(dates[0],dates[-1])
     else:
-        # DATETIME_FORMAT  = '%Y-%m-%d' # +01:00
-        # date_of_prof     = datetime.strptime(PROF_META['datetime'][0:10], DATETIME_FORMAT)
-        ax.set_xlim(DATE_RANGE[0],DATE_RANGE[1])
-    ax.set_ylim(0,np.max(h_max)+0.1)
+        DATETIME_FORMAT  = '%Y-%m-%d' # +01:00
+        d0 = datetime.strptime(DATE_RANGE[0], DATETIME_FORMAT)
+        d1 = datetime.strptime(DATE_RANGE[1], DATETIME_FORMAT)
+        ax.set_xlim(d0,d1)
+        # ax.set_xlim(DATE_RANGE[0],DATE_RANGE[1])
+    
+    if config.get("SNOWPRO","HEIGHT_MAX") != "NONE":
+        ax.set_ylim(0,float(config.get("SNOWPRO","HEIGHT_MAX")))
+    else:
+        ax.set_ylim(0,np.max(h_max)+0.1)
 
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
@@ -216,24 +232,24 @@ def plot_snp_evo(path_to_pro, output_dir='output/', DATETIME_STR=None, var='grai
     fig.text(meta_x,meta_y,header_str,horizontalalignment='left',
              verticalalignment='top', fontsize=10) # ma='left'
     
-    # --- Save figure --- #
+    """Save figure"""
     if output_name == 'NONE':
+        filename = config.get('SNOWPRO','PRO_FILE_PATH').split("/")[-1].split(".")[0]
         if DATETIME_STR==None:
-            # fig_title = f'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
-            fig_title = 'snp-evo-' + meta_dict['StationName'] + '_' + str(int(float(meta_dict['SlopeAngle']))) + '.png'
+            fig_title = filename + '_snp_evo.png'
         else:
-            fig_title = 'snp-evo-and-profile-' + meta_dict['StationName'] + '.png'
+            fig_title = filename + '_snp_evo_and_profile.png'
     else:
         fig_title = output_name
     fig.tight_layout()
-    print(f'[i]  Saving figure "{fig_title}" to "{output_dir}".')
-    fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
+    print(f'[i]  Saving figure "{fig_title}" to "{config.get("SNOWPRO","OUTPUT_DIR")}".')
+    fig.savefig(os.path.join(config.get("SNOWPRO","OUTPUT_DIR"),fig_title), facecolor='w', edgecolor='w',
                 format='png', dpi=150, bbox_inches='tight')
 
     print('[i]  Visualization of snowpack evolution completed in {}s'.format(time.time()-start_time))
 
 
-def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SCHEME='IACS2', ax=None):
+def plot_single_profile(config, ax=None):
     """Plots snow profile of PRO file @DATETIME (shows hardness profile + grain type).
     
     Arguments:
@@ -241,8 +257,10 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     Returns:
         Figure
     """
+    DATETIME_STR = config.get('SNOWPRO-PROF', 'DATETIME')
+    COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME')
 
-    profs, meta_dict = snowpro.read_pro(path_to_pro)
+    profs, meta_dict = snowpro.read_pro(config.get('SNOWPRO','PRO_FILE_PATH'))
 
     LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
 
@@ -254,14 +272,18 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     if ts in profs.keys():
         print('[i]  Timestamp {} found. Hardness profile will be plotted.'.format(DATETIME_STR))
     else:
-        ts = profs.key()[-1]
+        ts = list(profs)[-1]
         print('[i]  Timestamp {} not found. Hardness profile will be plotted for last timestamp.'.format(DATETIME_STR))
         DATETIME_STR = datetime.strftime(ts, datetime_format)
 
     """Use current ts from now on"""
     prof = profs[ts]
 
-    hand_hardness_dict = pro_helper.get_hand_hardness_N_dict()
+    hand_hardness_param_needed = True
+    if np.max(abs(prof['hand hardness'])) > 10:
+        hand_hardness_param_needed = False
+    if hand_hardness_param_needed:
+        hand_hardness_dict = pro_helper.get_hand_hardness_N_dict()
     prof['hand_hardness_N'] = prof['hand hardness'] # Just initialisation
     ZERO_HH_VAL = 50
 
@@ -283,7 +305,8 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     for ilayer in range(0,len(prof['graintype'])):
         cols.append(col_dict_labels[prof['graintype'][ilayer][0]])
         hatches.append(hatches_dict_labels[prof['graintype'][ilayer][0]])
-        prof['hand_hardness_N'][ilayer] = hand_hardness_dict[prof['hand hardness'][ilayer]]
+        if hand_hardness_param_needed:
+            prof['hand_hardness_N'][ilayer] = hand_hardness_dict[prof['hand hardness'][ilayer]]
     bar_plot   = ax.barh(prof['bottom'], prof['hand_hardness_N'], height=prof['thickness'], align='edge', color=cols, hatch=hatches) # label=labels[i])
     bar_plot_p = ax.barh(prof['bottom'], ZERO_HH_VAL, height=prof['thickness'], align='edge', color=cols, hatch=hatches)
         
@@ -320,7 +343,10 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
     XLIM = [-1100,50] 
     ax.set_xlim(XLIM)
     if fig!=None:
-        ax.set_ylim(0,prof['height'][-1]+0.1)
+        if config.get("SNOWPRO","HEIGHT_MAX") != "NONE":
+            ax.set_ylim(0,float(config.get("SNOWPRO","HEIGHT_MAX")))
+        else:
+            ax.set_ylim(0,prof['height'][-1]+0.1)
         ax.set_ylabel("height / m")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
@@ -358,10 +384,11 @@ def plot_single_profile(path_to_pro, DATETIME_STR,output_dir='output/', COLOR_SC
                 verticalalignment='top', fontsize=10,transform=ax.transAxes) # ma='left'
 
         # --- Save figure --- #
-        fig_title = 'snow-profile-' + meta_dict['StationName'] + '-' +  DATETIME_STR + '.png'
+        filename = config.get('SNOWPRO','PRO_FILE_PATH').split("/")[-1].split(".")[0]
+        fig_title = filename + '_snow_profile.png'
         fig.tight_layout()
-        print(f'[i]  Saving figure "{fig_title}" to "{output_dir}".')
-        fig.savefig(os.path.join(output_dir,fig_title), facecolor='w', edgecolor='w',
+        print(f'[i]  Saving figure "{fig_title}" to "{config.get("SNOWPRO","OUTPUT_DIR")}".')
+        fig.savefig(os.path.join(config.get("SNOWPRO","OUTPUT_DIR"),fig_title), facecolor='w', edgecolor='w',
                     format='png', dpi=150)
     else:
         ax.text(0.04,0.93,DATETIME_STR,horizontalalignment='left',

@@ -366,30 +366,19 @@ def snowpro(config_file=None, pro_file=None, output_dir=None):
     if not output_dir:
         output_dir = config.get('SNOWPRO','OUTPUT_DIR')
     os.makedirs(output_dir, exist_ok=True)
-
-    """Output name for figures"""
-    try:
-        output_name = config.get('SNOWPRO', 'OUTPUT_NAME')
-    except:
-        output_name = 'NONE'
         
     if pro_file != None:
         config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
 
     if config.get('SNOWPRO','PLOT_SNP_EVO') =='TRUE':
-        DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO','END_DATE')]
-        pro_plotter.plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, var=config.get('SNOWPRO-EVO','VAR'), res=config.get('SNOWPRO-EVO','RESOLUTION'),
-                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE, output_name=output_name)
+        pro_plotter.plot_snp_evo(config)
     
     if config.get('SNOWPRO','PLOT_PROFILE')=='TRUE':
-        pro_plotter.plot_single_profile(config.get('SNOWPRO','PRO_FILE_PATH'), config.get('SNOWPRO-PROF', 'DATETIME'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'))
+        pro_plotter.plot_single_profile(config)
 
     if config.get('SNOWPRO', 'PLOT_SNP_EVO_AND_PROFILE')=='TRUE':
-        DATE_RANGE = [config.get('SNOWPRO-EVO', 'START_DATE'), config.get('SNOWPRO-EVO', 'END_DATE')]
-        pro_plotter.plot_snp_evo(config.get('SNOWPRO','PRO_FILE_PATH'), output_dir=output_dir, DATETIME_STR=config.get('SNOWPRO-PROF','DATETIME'), var=config.get('SNOWPRO-EVO', 'VAR'), res=config.get('SNOWPRO-EVO', 'RESOLUTION'), 
-                        second_var=config.get('SNOWPRO-EVO','SECOND_VAR'), COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE, output_name=output_name)
-        # plot_snp_evo(config.get('SNOWPRO','PRO_FILE'), DATETIME_STR=config.get('PROFILE','DATETIME'), var=config.get('SNOWPRO-evo', 'VAR'), res=config.get('SNOWPRO-evo', 'RESOLUTION'), 
-        #                 second_var='NONE', COLOR_SCHEME=config.get('SNOWPRO','COLOR_SCHEME'), DATE_RANGE=DATE_RANGE)
+        pro_plotter.plot_snp_evo(config, DATETIME_STR=config.get('SNOWPRO-PROF','DATETIME'))
+
 
 
 if __name__ == "__main__":
