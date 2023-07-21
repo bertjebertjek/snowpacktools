@@ -85,9 +85,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         cmap = ListedColormap([col_dict[x] for x in col_dict.keys()])
     else:
         if var == 'Punstable':
-            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-            model = joblib.load('./models/RF_instability_model.sav')
-            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            profs     = instability_rfm_mayer.calc_punstable(profs)
             cmap_var  = pro_helper.get_Punstable_cmap()
             var_ticks = np.arange(0,1.1,0.1)
         else:
@@ -110,9 +108,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
         elif second_var == 'Punstable':
-            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-            model = joblib.load('./models/RF_instability_model.sav')
-            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            profs            = instability_rfm_mayer.calc_punstable(profs)
             cmap_var2        = pro_helper.get_Punstable_cmap()
             second_var_ticks = np.arange(0,1.1,0.1)
         else:
@@ -178,7 +174,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
             lulu[nn, :] = np.nan # nn
         # contf = ax.contourf(lulu,cmap=cmap_var2,norm=cnorm_var2,levels=clev_var2, extend='both') #extend='max'
         contf = ax.contourf(lulu, cmap=cmap_var2, levels=clev_var2, hatches=hatch_second_var)
-        cbar2 = fig.colorbar(contf,ax=ax0, location='left', pad=-0.06, ticks=second_var_ticks, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        cbar2 = fig.colorbar(contf,ax=ax0, location='left', ticks=second_var_ticks, fraction=1) # pad=-0.06, shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar2.set_label(second_var)
         # cbar.set_label("SK38 / -")
         meta_x = 0.24
@@ -186,28 +182,29 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         meta_x = 0.17
 
     if var=='grain_type':
-        lulu = np.zeros((n_bar,n_bar))
-        for nn,k in enumerate(col_dict.keys()):
-            lulu[nn, :] = np.nan # k
-        norm_bins = np.sort([*col_dict.keys()]) + 0.5
-        norm_bins = np.insert(norm_bins, 0, np.min(norm_bins) - 1.0)
+        if second_var=='NONE':
+            lulu = np.zeros((n_bar,n_bar))
+            for nn,k in enumerate(col_dict.keys()):
+                lulu[nn, :] = np.nan # k
+            norm_bins = np.sort([*col_dict.keys()]) + 0.5
+            norm_bins = np.insert(norm_bins, 0, np.min(norm_bins) - 1.0)
 
-        norm = BoundaryNorm(norm_bins, n_bar, clip=True)
-        fmt = FuncFormatter(lambda x, pos: LABELS_GRAIN_TYPE_BAR[::-1][norm(x)])
-        diff = norm_bins[1:] - norm_bins[:-1]
-        tickz = norm_bins[:-1] + diff / 2
+            norm = BoundaryNorm(norm_bins, n_bar, clip=True)
+            fmt = FuncFormatter(lambda x, pos: LABELS_GRAIN_TYPE_BAR[::-1][norm(x)])
+            diff = norm_bins[1:] - norm_bins[:-1]
+            tickz = norm_bins[:-1] + diff / 2
 
-        # contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins) # just for colorbar
-        contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins,hatches=HATCHES_GRAIN_TYPE_BAR[::-1], alpha=var_alpha) # just for colorbar
-        cbar = fig.colorbar(contf, ax=ax0, format=fmt, ticks=tickz,location='left', fraction=1) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
-        cbar.ax.grid(visible=False)
+            # contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins) # just for colorbar
+            contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins,hatches=HATCHES_GRAIN_TYPE_BAR[::-1], alpha=var_alpha) # just for colorbar
+            cbar = fig.colorbar(contf, ax=ax0, format=fmt, ticks=tickz, location='left', fraction=1) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+            cbar.ax.grid(visible=False)
     else:
         n_var = 9
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var, extend='both') #extend='max'
-        cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var) #extend='max'
+        cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, fraction=1) #  pad=0.01, shrink=0.7, ax=[axes[1],axes[3], axes[5]]
         cbar.set_label(var)
         # cbar.set_label("SK38 / -")
     

@@ -96,10 +96,15 @@ def avapro(config_file):
         """Visualize Avalanche Problems (APs)"""
         if run_visualize_avaprobs == 1:
             print('[i]  Visualizing avalanche problems from pkl files of tracked WLs')
-            path_to_pro = list_pro_red[ele]
-            output_path = os.path.join(OUTPUT_DIR_FIGS, pro_name + ".png")
+            path_to_pro      = list_pro_red[ele]
+            output_path      = os.path.join(OUTPUT_DIR_FIGS, pro_name + ".png")
+            output_path_Punstable = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_Punstable.png")
+            output_path_sk38 = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_sk38.png")
             res         = "1d"
             visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
+            # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path_Punstable, var='Punstable', res=res, second_var='NONE', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
+            # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path_sk38, var='grain_type', res=res, second_var='Sk38', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
+
 
     print('[i]  Tracking WLs and assigning avalanche problems finished')
 

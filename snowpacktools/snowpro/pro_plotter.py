@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import xarray
 import time
-import joblib
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
@@ -66,9 +65,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
         cmap = ListedColormap([col_dict[x] for x in col_dict.keys()])
     else:
         if var == 'Punstable':
-            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-            model = joblib.load('./models/RF_instability_model.sav')
-            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            profs     = instability_rfm_mayer.calc_punstable(profs)
             cmap_var  = pro_helper.get_Punstable_cmap()
             var_ticks = np.arange(0,1.1,0.1)
         else:
@@ -91,9 +88,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
         elif second_var == 'Punstable':
-            """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-            model = joblib.load('./models/RF_instability_model.sav')
-            profs = instability_rfm_mayer.calc_punstable(profs, model)
+            profs            = instability_rfm_mayer.calc_punstable(profs)
             cmap_var2        = pro_helper.get_Punstable_cmap()
             second_var_ticks = np.arange(0,1.1,0.1)
         else:

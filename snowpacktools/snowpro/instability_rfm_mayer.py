@@ -9,12 +9,18 @@
 @author: Stephanie Mayer, adapted by Michi Binder
 """
 
-import numpy as np
+import os
 import time
+import joblib
+import numpy as np
 
 
-def calc_punstable(profs, model):
+def calc_punstable(profs):
     """Calculate Mayer's Punstable and relevant variables and add it to profiles"""
+
+    """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
+    model = joblib.load(os.path.join("/".join(__file__.split("/")[:-1]), "models", "RF_instability_model.sav"))
+
 
     """Calculate Punstable and further properties for all profiles and layers"""
     slopeangle   = 0 # only used for calculation of penetration depth to check whether hard MFcrusts exists with thickness > 3 cm perpendicular to slope.
