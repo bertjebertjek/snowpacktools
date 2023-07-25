@@ -7,12 +7,12 @@ A tool to prepare CAAMLv6 snow profile files to initialize Snowpack simulations.
 A processing tool to parse .pro files and visualize the snowpack evolution
 
 <p float="center">
-  <img src="./snowpro/figures/snp-evo-and-profile-Speicherteich Dohlennest.png" width="85%" />
+  <img src="./snowpacktools/snowpro/figures/snp-evo-and-profile-Speicherteich Dohlennest.png" width="85%" />
 </p>
 
 # AVAPRO
 Assessment and Validation of Avalanche PROblems
 
 <p float="center">
-  <img src="./avapro/figures/snowprofile18284_sk38.png" width="85%" />
+  <img src="./snowpacktools/avapro/figures/snowprofile18284_sk38.png" width="85%" />
 </p>
