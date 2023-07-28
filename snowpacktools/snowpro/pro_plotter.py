@@ -207,11 +207,11 @@ def plot_snp_evo(config, DATETIME_STR=None):
     if config.get("SNOWPRO","HEIGHT_MAX") != "NONE":
         ax.set_ylim(0,float(config.get("SNOWPRO","HEIGHT_MAX")))
     else:
-        ax.set_ylim(0,np.max(h_max)+0.1)
+        ax.set_ylim(0,1.1*np.max(h_max))
 
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
-    ax.set_ylabel("height / m")
+    ax.set_ylabel("height / cm")
 
     # ax.xaxis.set_major_locator(###)
     ax.yaxis.set_minor_locator(AutoMinorLocator())
@@ -341,8 +341,8 @@ def plot_single_profile(config, ax=None):
         if config.get("SNOWPRO","HEIGHT_MAX") != "NONE":
             ax.set_ylim(0,float(config.get("SNOWPRO","HEIGHT_MAX")))
         else:
-            ax.set_ylim(0,prof['height'][-1]+0.1)
-        ax.set_ylabel("height / m")
+            ax.set_ylim(0,1.1*prof['height'][-1])
+        ax.set_ylabel("height / cm")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
         

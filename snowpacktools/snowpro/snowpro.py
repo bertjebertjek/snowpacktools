@@ -165,7 +165,7 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
         """Calculate thickness and bottom"""
         # if 'height' in profs[ts].keys():
         if len(profs[ts]['height']) > 0:
-            profs[ts]['height']    = profs[ts]['height'] / 100
+            # profs[ts]['height']    = profs[ts]['height'] / 100 # transform to m (not used anymore)
             profs[ts]['thickness'] = profs[ts]['height'].copy() # Catches first layer (thickness=height)
             i = np.arange(1,len(profs[ts]['height']))
             profs[ts]['thickness'][i] = profs[ts]['height'][i] - profs[ts]['height'][i-1]
