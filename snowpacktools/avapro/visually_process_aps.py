@@ -6,20 +6,20 @@
 ################################################################################
 
 import os
-import sys
+# import sys
 import time
-import configparser
+# import configparser
 
 import numpy as np
-import pandas as pd
-import xarray # needed for time axis
+# import pandas as pd
+# import xarray # needed for time axis
 from datetime import datetime, timedelta
 import joblib
 
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.ticker import AutoMinorLocator, FuncFormatter
+from matplotlib.dates import DateFormatter
 import matplotlib.image as image
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
@@ -103,7 +103,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     hatch_second_var = ''
     if second_var in second_vars:
         plot_second_var = True
-        var_alpha=0.25
+        var_alpha=0.33
         if second_var == 'Sk38' or second_var == 'Sn38':
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
@@ -119,7 +119,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         # cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     # VISUALIZATION
-    fig, ((ax0, ax),(ax1,ax_aps)) = plt.subplots(2,2,figsize=(12,7),sharex=True, gridspec_kw={'width_ratios':[1,15],'hspace':0.03,'wspace':0.03}) # 'height_ratios':[1,1]
+    fig, ((ax0, ax),(ax1,ax_aps)) = plt.subplots(2,2,figsize=(11,7),sharex=True, gridspec_kw={'width_ratios':[1,15],'height_ratios':[5,4],'hspace':0.03,'wspace':0.03}) # 'height_ratios':[1,1]
     ax0.axis('off')
     ax1.axis('off')
 
@@ -172,75 +172,66 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        # contf = ax.contourf(lulu,cmap=cmap_var2,norm=cnorm_var2,levels=clev_var2, extend='both') #extend='max'
         contf = ax.contourf(lulu, cmap=cmap_var2, levels=clev_var2, hatches=hatch_second_var)
-        cbar2 = fig.colorbar(contf,ax=ax0, location='left', ticks=second_var_ticks, fraction=1) # pad=-0.06, shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        cbar2 = fig.colorbar(contf,ax=ax0, location='left', ticks=second_var_ticks, fraction=1) # shrink=0.7
         cbar2.set_label(second_var)
-        # cbar.set_label("SK38 / -")
-        meta_x = 0.24
+
+        """Modify grain type legend for SARPGR"""
+        LABELS_GRAIN_TYPE  = ['PP(gp), DF','SH, DH','FC(xr), RG','MF(cr), IF']
+        COLORS_GRAIN_TYPE  = ['#ffde00','#95258f','#dacef4','#d5ebb5']
+        HATCHES_GRAIN_TYPE = ['','','','']
+        pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, x=0.2, y=1.03, width=0.028, height=0.025, spacing=0.15, alpha=var_alpha)
     else:
-        meta_x = 0.17
-
-    if var=='grain_type':
-        if second_var=='NONE':
-            lulu = np.zeros((n_bar,n_bar))
-            for nn,k in enumerate(col_dict.keys()):
-                lulu[nn, :] = np.nan # k
-            norm_bins = np.sort([*col_dict.keys()]) + 0.5
-            norm_bins = np.insert(norm_bins, 0, np.min(norm_bins) - 1.0)
-
-            norm = BoundaryNorm(norm_bins, n_bar, clip=True)
-            fmt = FuncFormatter(lambda x, pos: LABELS_GRAIN_TYPE_BAR[::-1][norm(x)])
-            diff = norm_bins[1:] - norm_bins[:-1]
-            tickz = norm_bins[:-1] + diff / 2
-
-            # contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins) # just for colorbar
-            contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins,hatches=HATCHES_GRAIN_TYPE_BAR[::-1], alpha=var_alpha) # just for colorbar
-            cbar = fig.colorbar(contf, ax=ax0, format=fmt, ticks=tickz, location='left', fraction=1) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
-            cbar.ax.grid(visible=False)
-    else:
-        n_var = 9
-        lulu = np.zeros((n_var,n_var))
-        for nn in range(0,n_var):
-            lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var) #extend='max'
-        cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, fraction=1) #  pad=0.01, shrink=0.7, ax=[axes[1],axes[3], axes[5]]
-        cbar.set_label(var)
-        # cbar.set_label("SK38 / -")
+        if var=='grain_type':
+            pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE[1:], COLORS_GRAIN_TYPE[1:], HATCHES_GRAIN_TYPE[1:], x=0.015, y=1.03, width=0.028, height=0.025, spacing=0.092, alpha=var_alpha)
+        else:
+            n_var = 9
+            lulu = np.zeros((n_var,n_var))
+            for nn in range(0,n_var):
+                lulu[nn, :] = np.nan # nn
+            contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var) #extend='max'
+            cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, fraction=1) 
+            cbar.set_label(var)
     
+    """Current timestamp (split nowcast and forecast)"""
     if DATETIME_STR!=None:
         datetime_format  = '%Y-%m-%dT%Hh%M'
         datetime_tmr     = datetime.strptime(DATETIME_STR, datetime_format) + timedelta(days=1)
-        ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
-        ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=2, ls='--')
+        # ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
+        # ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
         # datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
         # y_txt            = (np.max(h_max)+0.1) * 0.99
         # ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
 
-    """Axes and labels""" 
+    """Axes and labels"""
     if DATE_RANGE[0] == 'NONE':
         ax.set_xlim(dates[0],dates[-1])
     else:
-        # DATETIME_FORMAT  = '%Y-%m-%d' # +01:00
-        # date_of_prof     = datetime.strptime(PROF_META['datetime'][0:10], DATETIME_FORMAT)
-        ax.set_xlim(DATE_RANGE[0],DATE_RANGE[1])
-    ax.set_ylim(0,np.max(h_max)+0.1)
+        DATETIME_FORMAT  = '%Y-%m-%d' # +01:00
+        d0 = datetime.strptime(DATE_RANGE[0], DATETIME_FORMAT)
+        d1 = datetime.strptime(DATE_RANGE[1], DATETIME_FORMAT)
+        ax.set_xlim(d0,d1)
 
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.set_ylabel("height / m")
+    ax.set_ylim(0,1.1*np.max(h_max))
 
-    # ax.xaxis.set_major_locator(###)
+    if second_var!='NONE':
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+    else:
+        ax.yaxis.tick_left()
+        ax.yaxis.set_label_position("left")
+    ax.set_ylabel("height / cm")
+    date_fmt = DateFormatter("%b-%d")
+    ax.xaxis.set_major_formatter(date_fmt)
     ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-    # Include Meta data in top left corner and save figure
+    """Include Meta data in top left corner and save figure"""
     meta_x = 0.015
-    meta_y = 0.98
-    header_str = 'Location:      ' + meta_dict['StationName'] + '\nElevation:     ' + meta_dict['Altitude'] + \
-                'm\nSlope Angle: ' + str(int(float(meta_dict['SlopeAngle']))) + '°\nAspect:         ' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
-    ax.text(meta_x,meta_y,header_str,horizontalalignment='left',
-             verticalalignment='top', fontsize=10, transform=ax.transAxes) # ma='left'
-    
+    meta_y = 0.975
+    header_str   = 'Location:' + '\nElevation:' + '\nSlope Angle:' + '\nAspect:'
+    header_str_2 = meta_dict['StationName'] + '\n' + meta_dict['Altitude'] + 'm\n' + str(int(float(meta_dict['SlopeAngle']))) + '°\n' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
+    ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    ax.text(meta_x + 0.1, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
     
     """Visualize APs (second axis)"""
     df_P['napex_sele_natural'] = np.where(df_P['napex_sele_natural']==1, df_P['napex_sele_natural'], np.nan)
@@ -271,7 +262,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     icon_ypos = np.linspace(0.085,0.915,6)[::-1]
     shade = 0.75
     pad = 0.08
-    icon_zoom = 0.045
+    icon_zoom = 0.041
     
     for i,icon in enumerate(icon_list):
         imagebox = OffsetImage(icon, zoom=icon_zoom)
@@ -281,6 +272,6 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
 
     fig.tight_layout()
     fig.savefig(output_path, facecolor='w', edgecolor='w',
-                format='png', dpi=300, bbox_inches='tight')
+                format='png', dpi=250, bbox_inches='tight')
     plt.close(fig)
     print('[i]  Visualization of APs and snowpack evolution completed in {}s'.format(int(time.time()-start_time)))

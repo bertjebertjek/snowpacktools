@@ -12,7 +12,7 @@ import time
 
 import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap, to_rgba
-
+from matplotlib.patches import Rectangle
 
 def get_pro_code_dict():
     """NUmber in PRO file and corresponding variable."""
@@ -178,18 +178,18 @@ def get_grain_type_colors(COLOR_SCHEME):
 
     LABELS_GRAIN_TYPE        = ['-999','PP','DF','PPgp','SH','DH','FC','FCxr','RG','MF','MFcr','IF']
     COLORS_GRAIN_TYPE_IACS2  = ['white','#00FF00','#228B22','#696969','#FF00FF','#0000FF','#ADD8E6','#ADD8E6','#FFB6C1','#FF0000','#FF0000','#00FFFF']
-    COLORS_GRAIN_TYPE_SARP   = ['white','#ffde00','#f1f501','#696969','#ff0000','#0078ff','#b2edff','#b2edff','#ffccd9','#d5ebb5','#addd8e','#a3ddbb']
-    COLORS_GRAIN_TYPE_SARPGR = ['white','#ffde00','#ffde00','#95258f','#95258f','#95258f','#dacef4','#dacef4','#dacef4','#d5ebb5','#d5ebb5','#d5ebb5']
-    COLORS_GRAIN_TYPE_GREY   = ['white','#dcdcdc','#dcdcdc','#808080','#808080','#808080','#d3d3d3','#d3d3d3','#d3d3d3','#c0c0c0','#c0c0c0','#c0c0c0']
+    COLORS_GRAIN_TYPE_SARP   = ['white','#ffde00','#f1f501','#ffff33','#ff0000','#0078ff','#b2edff','#dacef4','#ffccd9','#d5ebb5','#addd8e','#a3ddbb']
+    COLORS_GRAIN_TYPE_SARPGR = ['white','#ffde00','#ffde00','#ffde00','#95258f','#95258f','#dacef4','#dacef4','#dacef4','#d5ebb5','#d5ebb5','#d5ebb5']
+    COLORS_GRAIN_TYPE_GREY   = ['white','#dcdcdc','#dcdcdc','#dcdcdc','#808080','#808080','#d3d3d3','#d3d3d3','#d3d3d3','#c0c0c0','#c0c0c0','#c0c0c0']
     HATCHES_GRAIN_TYPE_IACS2 = ['','','','','','','','','','','|||','']
     HATCHES_GRAIN_TYPE_SARP  = ['','','','','','','','','','','','']
 
     """INFO: Difference of lists above and _BAR below is FCxr and FC combined and no addtional spot for '-999'"""
     LABELS_GRAIN_TYPE_BAR        = ['PP','DF','PPgp','SH','DH','FC(xr)','RG','MF','MFcr','IF']
     COLORS_GRAIN_TYPE_BAR_IACS2  = ['#00FF00','#228B22','#696969','#FF00FF','#0000FF','#ADD8E6','#FFB6C1','#FF0000','#FF0000','#00FFFF']
-    COLORS_GRAIN_TYPE_BAR_SARP   = ['#ffde00','#f1f501','#696969','#ff0000','#0078ff','#b2edff','#ffccd9','#d5ebb5','#addd8e','#a3ddbb']
-    COLORS_GRAIN_TYPE_BAR_SARPGR = ['#ffde00','#ffde00','#95258f','#95258f','#95258f','#dacef4','#dacef4','#d5ebb5','#d5ebb5','#d5ebb5']
-    COLORS_GRAIN_TYPE_BAR_GREY   = ['#dcdcdc','#dcdcdc','#808080','#808080','#808080','#d3d3d3','#d3d3d3','#c0c0c0','#c0c0c0','#c0c0c0']
+    COLORS_GRAIN_TYPE_BAR_SARP   = ['#ffde00','#f1f501','#ffff33','#ff0000','#0078ff','#b2edff','#ffccd9','#d5ebb5','#addd8e','#a3ddbb']
+    COLORS_GRAIN_TYPE_BAR_SARPGR = ['#ffde00','#ffde00','#ffde00','#95258f','#95258f','#dacef4','#dacef4','#d5ebb5','#d5ebb5','#d5ebb5']
+    COLORS_GRAIN_TYPE_BAR_GREY   = ['#dcdcdc','#dcdcdc','#dcdcdc','#808080','#808080','#d3d3d3','#d3d3d3','#c0c0c0','#c0c0c0','#c0c0c0']
     HATCHES_GRAIN_TYPE_BAR_IACS2 = ['','','','','','','','','|||','']
     HATCHES_GRAIN_TYPE_BAR_SARP  = ['','','','','','','','','','']
 
@@ -216,6 +216,13 @@ def get_grain_type_colors(COLOR_SCHEME):
 
     return LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR
     
+
+def add_custom_legend(ax, labels, colors, hatches, x, y, width, height, spacing, alpha):
+    for i, (color, label) in enumerate(zip(colors, labels)):
+        rect = Rectangle((x + i * spacing, y), width, height, transform=ax.transAxes, clip_on=False, facecolor=color, hatch=hatches[i], alpha=alpha)
+        ax.add_patch(rect)
+        ax.text(x + 1.2*width + i * spacing, y, label, transform=ax.transAxes)
+
 
 def get_whiteout_cmap(reverse=False):
     """Helpful colormap for indices like SK38 or RTA."""
@@ -289,17 +296,21 @@ def get_hand_hardness_N_dict():
     """
     hand_hardness_dict =    {0  :0,
                             -1  :-20,
-                            -1.5:-60,
-                            -1.6:-60, ## BUG OF SNP?
-                            -2  :-100,
-                            -2.5:-175,
-                            -3  :-250,
-                            -3.5:-375,
-                            -4  :-500,
-                            -4.5:-750,
-                            -5  :-1000,
-                            -6  :-1200}
-    return hand_hardness_dict
+                            -1.5:-51,
+                            -1.6:-51, ## BUG OF SNP?
+                            -2  :-102,
+                            -2.5:-174,
+                            -3  :-269,
+                            -3.5:-390,
+                            -4  :-538,
+                            -4.5:-713,
+                            -5  :-918,
+                            -6  :-1422}
+    
+    tickz_hh       = [-918,-538,-269,-102,-20]
+    tick_labels_hh = ['K','P','1F','4F','F']
+
+    return hand_hardness_dict, tickz_hh, tick_labels_hh
 
 
 def get_range_dict():

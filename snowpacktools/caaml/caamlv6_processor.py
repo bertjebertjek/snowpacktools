@@ -213,14 +213,14 @@ def _monti_density(form, form2, hardness_str):
     dict_shapes = {'PP'  : [48,96,144,144,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan],
                    'PPgp': [48,96,144,144,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan],
                    'DF'  : [71,142,232,250,269,269,np.nan,np.nan,np.nan,np.nan,np.nan],
-                   'RG'  : [63,126,219,248,308,338,394,418,444,np.nan,np.nan],
-                   'FC'  : [82,164,272,295,347,373,440,479,519,np.nan,np.nan],
-                   'DH'  : [96,192,307,325,345,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan],
-                   'MF'  : [73,146,248,283,348,377,518,629,740,np.nan,np.nan],
-                   'FCxr': [86,172,282,304,350,373,426,455,485,np.nan,np.nan],
-                   'IF'  : [ice,ice,ice,ice,ice,ice,ice,ice,ice,ice,ice],
                    'SH'  : [sho,sho,sho,sho,sho,sho,sho,sho,sho,sho,sho],
-                   'MFcr': [mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc]}
+                   'DH'  : [96,192,307,325,345,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan],
+                   'FC'  : [82,164,272,295,347,373,440,479,519,np.nan,np.nan],
+                   'FCxr': [86,172,282,304,350,373,426,455,485,np.nan,np.nan],
+                   'RG'  : [63,126,219,248,308,338,394,418,444,np.nan,np.nan],
+                   'MF'  : [73,146,248,283,348,377,518,629,740,np.nan,np.nan],
+                   'MFcr': [mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc,mfc],
+                   'IF'  : [ice,ice,ice,ice,ice,ice,ice,ice,ice,ice,ice]}
     
     """
     1/3 of range used for full hardness, 2/3 used for .5 hardness

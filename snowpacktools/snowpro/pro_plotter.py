@@ -15,7 +15,7 @@ import time
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib.ticker import AutoMinorLocator, FuncFormatter
-
+from matplotlib.dates import DateFormatter
 from snowpacktools.snowpro import snowpro, pro_helper, instability_rfm_mayer
 
 
@@ -50,19 +50,14 @@ def plot_snp_evo(config, DATETIME_STR=None):
 
     """Filter for certain resolution and time frame"""
     w, __ = pro_helper.set_resolution(config.get('SNOWPRO-EVO', 'RESOLUTION'))
-    LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, LABELS_GRAIN_TYPE_BAR, COLORS_GRAIN_TYPE_BAR, HATCHES_GRAIN_TYPE_BAR = pro_helper.get_grain_type_colors(COLOR_SCHEME)
+    LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, _, _, _ = pro_helper.get_grain_type_colors(COLOR_SCHEME)
     RANGE_DICT = pro_helper.get_range_dict()
 
     """Color map and preprocessing"""
-    rta = 0.75
+    rta = 0.8
     if var=='grain_type':
         col_dict_labels     = dict(zip(LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE))
         hatches_dict_labels = dict(zip(LABELS_GRAIN_TYPE, HATCHES_GRAIN_TYPE))
-
-        n_bar = len(LABELS_GRAIN_TYPE_BAR)
-        col_nums = np.arange(0,n_bar)
-        col_dict = dict(zip(col_nums, COLORS_GRAIN_TYPE_BAR[::-1]))
-        cmap = ListedColormap([col_dict[x] for x in col_dict.keys()])
     else:
         if var == 'Punstable':
             profs     = instability_rfm_mayer.calc_punstable(profs)
@@ -74,7 +69,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
                 var_ticks = np.arange(0,1.6,0.1)
             else:
                 cmap_var = plt.get_cmap('plasma_r')
-        clev_var  = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
+        clev_var = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
         # cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
 
     plot_second_var  = False
@@ -83,7 +78,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
     hatch_second_var = ''
     if second_var in second_vars:
         plot_second_var = True
-        var_alpha=0.25
+        var_alpha=0.33
         if second_var == 'Sk38' or second_var == 'Sn38':
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
@@ -92,7 +87,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
             cmap_var2        = pro_helper.get_Punstable_cmap()
             second_var_ticks = np.arange(0,1.1,0.1)
         else:
-            # cmap_var2  = plt.get_cmap('gist_gray')
+            #cmap_var2  = plt.get_cmap('gist_gray')
             cmap_var2 = pro_helper.get_whiteout_cmap(reverse=True)
             
         clev_var2 = np.linspace(RANGE_DICT[second_var][0],RANGE_DICT[second_var][1],100) # 11 discrete colorbar
@@ -100,9 +95,11 @@ def plot_snp_evo(config, DATETIME_STR=None):
 
     """Visualization"""
     if DATETIME_STR==None:
-        fig, ax = plt.subplots(1,1,figsize=(14,6))
+        # fig, (ax_cbar,ax) = plt.subplots(1,2,figsize=(10,5),gridspec_kw={'width_ratios': [0.5,11]})
+        fig, ax = plt.subplots(1,1,figsize=(9.5,5))
     else:
-        fig, (ax,ax_prof) = plt.subplots(1,2,figsize=(14,6),sharey=True,gridspec_kw={'width_ratios': [3, 1]})
+        fig, (ax,ax_prof) = plt.subplots(1,2,figsize=(11,5),sharey=True,gridspec_kw={'width_ratios': [11,4]})
+    # ax_cbar.axis('off')
 
     h_max = []
     dates = []
@@ -127,7 +124,6 @@ def plot_snp_evo(config, DATETIME_STR=None):
                 cols     = cmap_var(var_data)
                 ax.bar(ts, prof['height'][-1], width=w, bottom=0, align='edge', color='lightgrey', alpha=1)
                 ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols, alpha=1)
-                
             
             if plot_second_var:
                 """Filter data with RTA"""
@@ -150,7 +146,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
         ax_prof, DATETIME_STR = plot_single_profile(config,ax=ax_prof)
         datetime_format = '%Y-%m-%dT%Hh%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
-        ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=3, ls='--')
+        ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
 
     """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
     if second_var!='NONE':
@@ -159,40 +155,28 @@ def plot_snp_evo(config, DATETIME_STR=None):
         lulu = np.zeros((n_var,n_var))
         for nn in range(0,n_var):
             lulu[nn, :] = np.nan # nn
-        # contf = ax.contourf(lulu,cmap=cmap_var2,norm=cnorm_var2,levels=clev_var2, extend='both') #extend='max'
         contf = ax.contourf(lulu, cmap=cmap_var2, levels=clev_var2, hatches=hatch_second_var)
-        cbar2 = fig.colorbar(contf,ax=ax, location='left', pad=-0.06, ticks=second_var_ticks, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        # cbar2 = fig.colorbar(contf,ax=ax_cbar, location='left', ticks=second_var_ticks, pad=0, fraction=1, aspect=30, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
+        cbar2 = fig.colorbar(contf,ax=ax, location='left', ticks=second_var_ticks, pad=0.02, extend='both') # shrink=0.7
         cbar2.set_label(second_var)
-        # cbar.set_label("SK38 / -")
-        meta_x = 0.24
+
+        """Modify grain type legend for SARPGR"""
+        LABELS_GRAIN_TYPE  = ['PP(gp), DF','SH, DH','FC(xr), RG','MF(cr), IF']
+        COLORS_GRAIN_TYPE  = ['#ffde00','#95258f','#dacef4','#d5ebb5']
+        HATCHES_GRAIN_TYPE = ['','','','']
+        pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, x=0.188, y=1.03, width=0.028, height=0.025, spacing=0.17, alpha=var_alpha)
     else:
-        meta_x = 0.17
-
-    if var=='grain_type':
-        lulu = np.zeros((n_bar,n_bar))
-        for nn,k in enumerate(col_dict.keys()):
-            lulu[nn, :] = np.nan # k
-        norm_bins = np.sort([*col_dict.keys()]) + 0.5
-        norm_bins = np.insert(norm_bins, 0, np.min(norm_bins) - 1.0)
-
-        norm = BoundaryNorm(norm_bins, n_bar, clip=True)
-        fmt = FuncFormatter(lambda x, pos: LABELS_GRAIN_TYPE_BAR[::-1][norm(x)])
-        diff = norm_bins[1:] - norm_bins[:-1]
-        tickz = norm_bins[:-1] + diff / 2
-
-        # contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins) # just for colorbar
-        contf = ax.contourf(lulu,cmap=cmap,norm=norm,levels=norm_bins,hatches=HATCHES_GRAIN_TYPE_BAR[::-1], alpha=var_alpha) # just for colorbar
-        cbar = fig.colorbar(contf, ax=ax, format=fmt, ticks=tickz,location='left', pad=0.01) # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
-        cbar.ax.grid(visible=False)
-    else:
-        n_var = 9
-        lulu = np.zeros((n_var,n_var))
-        for nn in range(0,n_var):
-            lulu[nn, :] = np.nan # nn
-        contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var, extend='both') #extend='max'
-        cbar = fig.colorbar(contf,ax=ax, location='left', ticks=var_ticks, pad=0.01, extend='both') # shrink=0.7, ax=[axes[1],axes[3], axes[5]]
-        cbar.set_label(var)
-        # cbar.set_label("SK38 / -")
+        if var=='grain_type':
+            pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE[1:], COLORS_GRAIN_TYPE[1:], HATCHES_GRAIN_TYPE[1:], x=0.015, y=1.03, width=0.028, height=0.025, spacing=0.092, alpha=var_alpha)
+        else:
+            n_var = 9
+            lulu = np.zeros((n_var,n_var))
+            for nn in range(0,n_var):
+                lulu[nn, :] = np.nan # nn
+            contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var) #extend='max'
+            # cbar = fig.colorbar(contf,ax=ax_cbar, location='left', ticks=var_ticks, fraction=1, extend='both')
+            cbar = fig.colorbar(contf,ax=ax, location='left', ticks=var_ticks, pad=0.02, extend='both')
+            cbar.set_label(var)
     
     """Axes and labels""" 
     if DATE_RANGE[0] == 'NONE':
@@ -202,7 +186,6 @@ def plot_snp_evo(config, DATETIME_STR=None):
         d0 = datetime.strptime(DATE_RANGE[0], DATETIME_FORMAT)
         d1 = datetime.strptime(DATE_RANGE[1], DATETIME_FORMAT)
         ax.set_xlim(d0,d1)
-        # ax.set_xlim(DATE_RANGE[0],DATE_RANGE[1])
     
     if config.get("SNOWPRO","HEIGHT_MAX") != "NONE":
         ax.set_ylim(0,float(config.get("SNOWPRO","HEIGHT_MAX")))
@@ -211,21 +194,20 @@ def plot_snp_evo(config, DATETIME_STR=None):
 
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
+    ax.yaxis.set_tick_params(labelright=True)
     ax.set_ylabel("height / cm")
-
-    # ax.xaxis.set_major_locator(###)
+    
+    date_fmt = DateFormatter("%b-%d")
+    ax.xaxis.set_major_formatter(date_fmt)
     ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-    # Include Meta data in top left corner and save figure
-    if DATETIME_STR!=None:
-        meta_x = 0.13
-        meta_y = 0.89
-    else:
-        meta_y = 0.94
-    header_str = 'Location:      ' + meta_dict['StationName'] + '\nElevation:     ' + meta_dict['Altitude'] + \
-                'm\nSlope Angle: ' + str(int(float(meta_dict['SlopeAngle']))) + '°\nAspect:         ' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
-    fig.text(meta_x,meta_y,header_str,horizontalalignment='left',
-             verticalalignment='top', fontsize=10) # ma='left'
+    """Include Meta data in top left corner and save figure"""
+    meta_x = 0.015
+    meta_y = 0.975
+    header_str   = 'Location:' + '\nElevation:' + '\nSlope Angle:' + '\nAspect:'
+    header_str_2 = meta_dict['StationName'] + '\n' + meta_dict['Altitude'] + 'm\n' + str(int(float(meta_dict['SlopeAngle']))) + '°\n' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
+    ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    ax.text(meta_x + 0.12, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
     
     """Save figure"""
     if output_name == 'NONE':
@@ -277,13 +259,12 @@ def plot_single_profile(config, ax=None):
     hand_hardness_param_needed = True
     if np.max(abs(prof['hand hardness'])) > 10:
         hand_hardness_param_needed = False
-    if hand_hardness_param_needed:
-        hand_hardness_dict = pro_helper.get_hand_hardness_N_dict()
+    hand_hardness_dict, tickz_hh, tick_labels_hh = pro_helper.get_hand_hardness_N_dict()
     prof['hand_hardness_N'] = prof['hand hardness'] # Just initialisation
     ZERO_HH_VAL = 50
 
     if ax==None:
-        fig, ax = plt.subplots(1,1,figsize=(6,7))
+        fig, ax = plt.subplots(1,1,figsize=(4.5,5))
     else:
         fig=None
 
@@ -326,7 +307,7 @@ def plot_single_profile(config, ax=None):
 
     # Temperature axis
     ax_t = ax.twiny()
-    ax_t.plot(prof['temperature'], prof['height'], color='#DC143C',lw=1.5)
+    ax_t.plot(prof['temperature'], prof['height'], color='#DC143C',lw=1)
     ax_t.grid(visible=False)
     ax_t.xaxis.tick_bottom()
     ax_t.xaxis.set_label_position("bottom")
@@ -359,10 +340,10 @@ def plot_single_profile(config, ax=None):
     ax_hh.grid(visible=False)
     ax_hh.xaxis.tick_top()
     ax_hh.xaxis.set_label_position("top")
-    tickz       = [-1000,-500,-250,-100,-20]
-    tick_labels = ['K','P','1F','4F','F']
-    ax_hh.set_xticks(tickz)
-    ax_hh.set_xticklabels(tick_labels)
+    # tickz       = [-1000,-500,-250,-100,-20]
+    # tick_labels = ['K','P','1F','4F','F']
+    ax_hh.set_xticks(tickz_hh)
+    ax_hh.set_xticklabels(tick_labels_hh)
     ax_hh.tick_params(axis="x",direction="in", pad=-18)
 
     ax.xaxis.tick_top()
@@ -373,10 +354,12 @@ def plot_single_profile(config, ax=None):
 
     # Include Meta data in top left corner and save figure
     if fig!=None:
-        header_str = 'Location:      ' + meta_dict['StationName'] + ' (' + DATETIME_STR + ')\nElevation:     ' + meta_dict['Altitude'] + \
-                    'm\nSlope Angle: ' + str(int(float(meta_dict['SlopeAngle']))) + '°\nAspect:         ' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
-        ax.text(0.04,0.95,header_str,horizontalalignment='left',
-                verticalalignment='top', fontsize=10,transform=ax.transAxes) # ma='left'
+        meta_x = 0.04
+        meta_y = 0.92
+        header_str   = 'Location:' + '\nElevation:' + '\nSlope Angle:' + '\nAspect:'
+        header_str_2 = meta_dict['StationName'] + '\n' + meta_dict['Altitude'] + 'm\n' + str(int(float(meta_dict['SlopeAngle']))) + '°\n' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
+        ax.text(meta_x,       meta_y, header_str,    horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10)
+        ax.text(meta_x + 0.28, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10)
 
         # --- Save figure --- #
         filename = config.get('SNOWPRO','PRO_FILE_PATH').split("/")[-1].split(".")[0]
