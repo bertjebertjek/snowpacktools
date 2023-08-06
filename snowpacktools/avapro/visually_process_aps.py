@@ -197,11 +197,11 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     if DATETIME_STR!=None:
         datetime_format  = '%Y-%m-%dT%Hh%M'
         datetime_tmr     = datetime.strptime(DATETIME_STR, datetime_format) + timedelta(days=1)
-        # ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
-        # ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
-        # datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
-        # y_txt            = (np.max(h_max)+0.1) * 0.99
-        # ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
+        ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
+        ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
+        ## datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
+        ## y_txt            = (np.max(h_max)+0.1) * 0.99
+        ## ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
 
     """Axes and labels"""
     if DATE_RANGE[0] == 'NONE':
