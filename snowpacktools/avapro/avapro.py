@@ -44,37 +44,38 @@ def avapro(config_file):
     rerun_assign_avaprobs    = int(config["AVAPRO"]["rerun_assign_avaprobs"])
     run_visualize_avaprobs   = int(config["AVAPRO"]["run_visualize_avaprobs"])
 
-    """Input directories: Get list of available files"""
-    SNP_DIR   = config.get('AVAPRO', 'SNP_DIR')
-    list_pro  = sorted(glob.glob(SNP_DIR + "/*.pro"))
-    list_smet = sorted(glob.glob(SNP_DIR + "/*.smet"))
-
     """Output directories (one for pickle files, one for figures)"""
     OUTPUT_DIR      = config.get('AVAPRO', 'OUTPUT_DIR')
     OUTPUT_DIR_FIGS = config.get('AVAPRO', 'OUTPUT_DIR_FIGS')
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR_FIGS, exist_ok=True)
 
-    """Select certain aspects or filter for other things"""
-    # SLOPE_ASPECTS=flat N E S W
-    list_pro_red  = list_pro
-    list_smet_red = list_smet
-
-    if len(list_pro_red) == len(list_smet_red):
+    """Input directories: Get list of available files"""
+    if config.get('AVAPRO', 'SNP_FILE') == "NONE":
+        list_pro  = sorted(glob.glob(config.get('AVAPRO', 'SNP_DIR') + "/*.pro"))
+        list_smet = sorted(glob.glob(config.get('AVAPRO', 'SNP_DIR') + "/*.smet"))
+        
+        """Select certain aspects or filter for other things"""
+        # SLOPE_ASPECTS=flat N E S W
+    else:
+        list_pro  = [os.path.join(config.get('AVAPRO', 'SNP_DIR'),config.get('AVAPRO', 'SNP_FILE'))]
+        list_smet = [os.path.join(config.get('AVAPRO', 'SNP_DIR'),config.get('AVAPRO', 'SNP_FILE').split(".")[0] + ".smet")]
+        
+    if len(list_pro) == len(list_smet):
         pass
-    elif len(list_pro_red) == 0:
+    elif len(list_pro) == 0:
         raise ValueError('[E]   No input, please check your input folder')
     else:
         raise ValueError('[E]   Number of .pro files and .smet files does not match')
 
     """Find potential weak layers (APS)"""
-    print("[i]  Pro-list: ", list_pro_red)
-    for ele in range(len(list_pro_red)):
-        pro_name = list_pro_red[ele].split('/')[-1].split('.')[0]
+    print("[i]  Pro-list: ", list_pro)
+    for ele in range(len(list_pro)):
+        pro_name = list_pro[ele].split('/')[-1].split('.')[0]
         print("[i]  Running AVAPRO on PRO-file: ", pro_name)
         if rerun_find_WL == 1:
             print('[i]  Generate data from pro and smet files')
-            df_met, df_P, meta_dict = find_aps.find_aps(config, list_pro_red[ele], list_smet_red[ele])
+            df_met, df_P, meta_dict = find_aps.find_aps(config, list_pro[ele], list_smet[ele])
             
             """Save as pkl file"""
             df_P.to_pickle(os.path.join(OUTPUT_DIR,pro_name + '_df_P.pkl'))
@@ -96,7 +97,7 @@ def avapro(config_file):
         """Visualize Avalanche Problems (APs)"""
         if run_visualize_avaprobs == 1:
             print('[i]  Visualizing avalanche problems from pkl files of tracked WLs')
-            path_to_pro      = list_pro_red[ele]
+            path_to_pro      = list_pro[ele]
             output_path      = os.path.join(OUTPUT_DIR_FIGS, pro_name + ".png")
             output_path_Punstable = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_Punstable.png")
             output_path_sk38 = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_sk38.png")
