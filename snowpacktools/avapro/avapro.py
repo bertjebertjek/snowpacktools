@@ -102,9 +102,9 @@ def avapro(config_file):
             output_path_Punstable = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_Punstable.png")
             output_path_sk38 = os.path.join(OUTPUT_DIR_FIGS, pro_name + "_sk38.png")
             res         = "1d"
-            visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='Sk38', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
+            # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='Sk38', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
             # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='grain_type', res=res, second_var='NONE', COLOR_SCHEME='IACS2',DATE_RANGE=['NONE','NONE'])
-            # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path_Punstable, var='Punstable', res=res, second_var='NONE', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
+            visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path, var='Punstable', res=res, second_var='NONE', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
             # visually_process_aps.plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=datetime_today_str, output_path=output_path_sk38, var='grain_type', res=res, second_var='Sk38', COLOR_SCHEME='SARPGR',DATE_RANGE=['NONE','NONE'])
 
 
