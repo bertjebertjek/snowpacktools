@@ -18,7 +18,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=[
         "lxml",
         "numpy",
@@ -27,6 +27,7 @@ setuptools.setup(
         "xarray",
         "netcdf4",
         "sympy",
-        "joblib"
+        "joblib",
+        "scikit-learn<=1.2"
     ]
 )

@@ -214,7 +214,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
 
     ax.set_ylim(0,1.1*np.max(h_max))
 
-    if second_var!='NONE':
+    if second_var!='NONE' or var!="grain_type":
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
     else:
