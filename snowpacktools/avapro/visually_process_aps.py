@@ -88,12 +88,15 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
             profs     = instability_rfm_mayer.calc_punstable(profs)
             cmap_var  = pro_helper.get_Punstable_cmap()
             var_ticks = np.arange(0,1.1,0.1)
+            var_label = var + " (RTA > 0.75)"
         else:
             if var == 'Sk38' or var == 'Sn38':
+                var_label = var + " (RTA > 0.75)"
                 cmap_var  = pro_helper.get_sk38_cmap()
                 var_ticks = np.arange(0,1.6,0.1)
             else:
-                cmap_var = plt.get_cmap('plasma_r')
+                cmap_var  = plt.get_cmap('plasma_r')
+                var_label = var
         clev_var  = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
         # cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
 
@@ -102,8 +105,10 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
     second_vars      = ['Sk38','Sn38','Punstable']
     hatch_second_var = ''
     if second_var in second_vars:
-        plot_second_var = True
-        var_alpha=0.33
+        plot_second_var  = True
+        second_var_label = second_var + " (RTA > 0.75)"
+        #var_alpha        = 1 #cmb
+        var_alpha        = 0.33
         if second_var == 'Sk38' or second_var == 'Sn38':
             cmap_var2        = pro_helper.get_sk38_cmap()
             second_var_ticks = np.arange(0,1.6,0.1)
@@ -158,6 +163,7 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
                 var_data2 = (var_data2-RANGE_DICT[second_var][0])/(RANGE_DICT[second_var][1]-RANGE_DICT[second_var][0])
                 cols2 = cmap_var2(var_data2)
                 ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols2, hatch=hatches, alpha=1)
+                #ax.bar(ts, thickness, width=w, bottom=bottom, align='edge', color=cols2, hatch=hatches, alpha=0) #cmb
         else:
             h_max.append(0)
 
@@ -174,13 +180,15 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
             lulu[nn, :] = np.nan # nn
         contf = ax.contourf(lulu, cmap=cmap_var2, levels=clev_var2, hatches=hatch_second_var)
         cbar2 = fig.colorbar(contf,ax=ax0, location='left', ticks=second_var_ticks, fraction=1) # shrink=0.7
-        cbar2.set_label(second_var)
+        cbar2.set_label(second_var_label)
 
         """Modify grain type legend for SARPGR"""
         LABELS_GRAIN_TYPE  = ['PP(gp), DF','SH, DH','FC(xr), RG','MF(cr), IF']
         COLORS_GRAIN_TYPE  = ['#ffde00','#95258f','#dacef4','#d5ebb5']
         HATCHES_GRAIN_TYPE = ['','','','']
         pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, x=0.2, y=1.03, width=0.028, height=0.025, spacing=0.15, alpha=var_alpha)
+        #pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE[1:], COLORS_GRAIN_TYPE[1:], HATCHES_GRAIN_TYPE[1:], x=0.015, y=1.03, width=0.028, height=0.025, spacing=0.092, alpha=var_alpha) #cmb
+
     else:
         if var=='grain_type':
             pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE[1:], COLORS_GRAIN_TYPE[1:], HATCHES_GRAIN_TYPE[1:], x=0.015, y=1.03, width=0.028, height=0.025, spacing=0.092, alpha=var_alpha)
@@ -191,7 +199,13 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
                 lulu[nn, :] = np.nan # nn
             contf = ax.contourf(lulu,cmap=cmap_var,levels=clev_var) #extend='max'
             cbar = fig.colorbar(contf,ax=ax0, location='left', ticks=var_ticks, fraction=1) 
-            cbar.set_label(var)
+            cbar.set_label(var_label)
+
+            """Modify grain type legend for SARPGR"""
+            LABELS_GRAIN_TYPE  = ['PP(gp), DF','SH, DH','FC(xr), RG','MF(cr), IF']
+            COLORS_GRAIN_TYPE  = ['#ffde00','#95258f','#dacef4','#d5ebb5']
+            HATCHES_GRAIN_TYPE = ['','','','']
+            pro_helper.add_custom_legend(ax, LABELS_GRAIN_TYPE, COLORS_GRAIN_TYPE, HATCHES_GRAIN_TYPE, x=0.2, y=1.03, width=0.028, height=0.025, spacing=0.15, alpha=var_alpha)
     
     """Current timestamp (split nowcast and forecast)"""
     if DATETIME_STR!=None:
@@ -199,9 +213,9 @@ def plot_aps_and_profile_evolution(df_P, path_to_pro, DATETIME_STR=None, output_
         datetime_tmr     = datetime.strptime(DATETIME_STR, datetime_format) + timedelta(days=1)
         ax.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
         ax_aps.axvline(x=datetime_tmr,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
-        ## datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
-        ## y_txt            = (np.max(h_max)+0.1) * 0.99
-        ## ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
+        ### datetime_tmr_txt = datetime_tmr + timedelta(hours=12)
+        ### y_txt            = (np.max(h_max)+0.1) * 0.99
+        ### ax.text(datetime_tmr_txt, y_txt, r"$\rightarrow$" + "\nForecast\n"+r"$\rightarrow$", horizontalalignment='left', verticalalignment='top')
 
     """Axes and labels"""
     if DATE_RANGE[0] == 'NONE':

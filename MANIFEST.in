@@ -1,0 +1,5 @@
+# MANIFEST.in
+# recursive-include graphics/*
+graft snowpacktools/avapro/graphics
+graft snowpacktools/snowpro/models
+global-include *.mplstyle
