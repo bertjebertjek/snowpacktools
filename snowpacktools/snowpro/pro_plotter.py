@@ -146,7 +146,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
         ax_prof, DATETIME_STR = plot_single_profile(config,ax=ax_prof)
         datetime_format = '%Y-%m-%dT%Hh%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
-        ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
+        #ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
 
     """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
     if second_var!='NONE':
@@ -206,8 +206,8 @@ def plot_snp_evo(config, DATETIME_STR=None):
     meta_y = 0.975
     header_str   = 'Location:' + '\nElevation:' + '\nSlope Angle:' + '\nAspect:'
     header_str_2 = meta_dict['StationName'] + '\n' + meta_dict['Altitude'] + 'm\n' + str(int(float(meta_dict['SlopeAngle']))) + '°\n' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
-    ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
-    ax.text(meta_x + 0.12, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    #ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    #ax.text(meta_x + 0.12, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
     
     """Save figure"""
     if output_name == 'NONE':

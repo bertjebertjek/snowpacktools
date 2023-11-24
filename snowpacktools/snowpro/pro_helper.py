@@ -277,11 +277,13 @@ def get_sk38_cmap():
 
 def get_Punstable_cmap():
     """Create a custom colormap with smooth transitions between the given colors."""
-    c3 = 'red'
-    c2 = 'darkorange'
-    c1 = 'yellow'
-    c0 = 'limegreen'
-    colors = [(0.0, c0), (0.45, c0), (0.5, c1), (0.66, c1), (0.71, c2), (0.77, c2), (0.82, c3), (1.0, c3)]
+    c4 =  '#d1001f' # '#C21807'
+    #c3 = '#ED2939'
+    c3 = '#C21807'
+    c2 = '#FF9F00'  # 'darkorange' '#FF9F00' #
+    c1 = '#85CC6F' # '#A0E989'
+    c0 = '#136207'
+    colors = [(0.0, c0), (0.03, c0), (0.05, c1), (0.4, c1), (0.45, c2), (0.65, c2), (0.7, c3), (0.8, c3), (0.85, c4), (1.0, c4)]
     
     cmap = LinearSegmentedColormap.from_list('Sk38', colors=colors, N=256)
     return cmap
