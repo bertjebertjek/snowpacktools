@@ -108,6 +108,8 @@ def setup(configfile, domain=''):
 
     if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file':
         config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file']
+    if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_ouput_dir':
+        config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_ouput_dir']
 
     """Create directories"""
     os.makedirs("./output", exist_ok=True)
@@ -139,6 +141,19 @@ def _worker_aggregation(i, config):
 
 
 if __name__ == "__main__":
+    """Manually aggregate gridded snow profiles from the command line.
+    
+    Usage
+    -----
+    python3 gridded.py configfile [domain]
+        Make sure your working directory is set correctly before calling the module and your custom 
+        configfile is adjusted to your environment.
+
+    Returns
+    -------
+    The module will aggregate the profiles and store the results in subdirectories of './output/'.
+    Directory names will contain the domain string.
+    """
 
     if len(sys.argv) < 2 | len(sys.argv) > 3:
         sys.exit("[E] Synopsis: python3 gridded.py configfile [domain]")
@@ -155,6 +170,3 @@ if __name__ == "__main__":
         config = setup(configfile, domain)
 
     aggregate(config)
-
-    
-    
