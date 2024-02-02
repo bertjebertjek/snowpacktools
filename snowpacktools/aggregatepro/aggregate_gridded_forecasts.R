@@ -12,7 +12,7 @@ tryCatch({
   stop("[E] Error when parsing inputs: ", e$message, call. = FALSE)
 })
 
-cat(paste("[i] RScript: Working directory set to", getwd()))
+cat(paste("\n[i] RScript: Working directory set to", getwd()))
 
 library(sarp.snowprofile)
 library(sarp.snowprofile.alignment)
@@ -82,7 +82,7 @@ for (i in seq_len(nrow(mp_df))) {
         profileset <- snowprofileSet(lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
                                             tz = config$Forecast$TZONE, suppressWarnings = TRUE))
       } else {
-        cat(paste("[w] No profiles at the relevant dates for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+        cat(paste("\n[w] No profiles at the relevant dates for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
         quit(save = "no")
       }
       ## This hack is necessary until the station_id is written to the
@@ -102,7 +102,7 @@ for (i in seq_len(nrow(mp_df))) {
       # profileset <- computePunstable(profileset)  # verify unit of ski pen!
       ## Create random ski_pen to test entire framework until ski_pen issue resolved
       warning("Random ski_pen used for testing purposes")
-      cat("[W] Random ski_pen used for testing purposes")
+      cat("\n[W] Random ski_pen used for testing purposes")
       profileset <- computePunstable(profileset, ski_pen = rep(0.2, length(profileset)))
       profileset <- snowprofileSet(lapply(profileset, function(sp) {
         labelPWL(sp, pwl_gtype = c("SH", "DH", "FCxr", "FC"), threshold_gtype = c("FC", "FCxr"), threshold_RTA = 0.8)
@@ -136,7 +136,7 @@ for (i in seq_len(nrow(mp_df))) {
         } else {
           init <- TRUE
           cat(paste(
-            "[w] Looks like the average profile on file is outdated/erroneous.",
+            "\n[w] Looks like the average profile on file is outdated/erroneous.",
             "I re-initialize the average profile and overwrite the file."
           ))
         }
@@ -149,7 +149,7 @@ for (i in seq_len(nrow(mp_df))) {
 
       ## Save to file
       if (sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
-        cat(paste("[w] More than 20% of average profiles were re-initialized for", 
+        cat(paste("\n[w] More than 20% of average profiles were re-initialized for", 
                     mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"], 
                     "--Consider investigating!"))
       }
@@ -187,13 +187,13 @@ for (i in seq_len(nrow(mp_df))) {
       dev.off()
 
     } else {
-      cat(paste("[i] Not aggregating b/c less than three profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+      cat(paste("\n[i] Not aggregating b/c less than three profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
     }
   }, error = function(e) {
-    if (config$Aggregate$DEBUG_MODE) cat(e$message)
-    cat(paste("[E] Error while aggregating profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+    if (config$Aggregate$DEBUG_MODE) cat(paste0("\n", e$message))
+    cat(paste("\n[E] Error while aggregating profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
   })
   if (inherits(iterstatus, "error")) next
 }  # END for loop
 
-if (config$Aggregate$DEBUG_MODE) cat(round(Sys.time() - t0, 2))
+if (config$Aggregate$DEBUG_MODE) cat(paste0("\n", round(Sys.time() - t0, 2)))
