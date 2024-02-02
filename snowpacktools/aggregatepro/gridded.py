@@ -1,12 +1,12 @@
-#! /usr/bin/python3
 ################################################################################
-# Copyright 2022 Avalanche Warning Service Tyrol                               #
+# Copyright 2024 Avalanche Warning Service Tyrol / Florian Herla               #
 ################################################################################
 # This is free software you can redistribute/modify under the terms of the     #
 # GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
 import os
+import sys
 import configparser
 import subprocess
 import multiprocessing
@@ -16,10 +16,84 @@ import numpy as np
 import pandas as pd
 
 def aggregate(config):
+    """Compute average/representative snow profiles from snowpack simulations stored in .pro files.
 
-    """Update config"""
-    ## The following ones should be made accessible to user config!
-    domain_appendix = os.path.basename(config['Paths']['_snp_output_dir']).replace("snp", "")  # e.g. "-subtirol10000"
+    The function can be used to aggregate profiles from an entire season, or it can be called day-by-day
+    to aggregate the profiles as the eason proceeds in an operational mode.
+
+    Parameters
+    ----------
+    config: configparser.ConfigParser
+        A config as returned by the function `setup`. Can be modified by a custom config.ini file.
+    
+    Returns
+    -------
+    None:
+        Instead of returning a python object, the function writes `.rds` and `.png` files stored in `./output/[...]`
+    """
+
+    """Create data frame that stores unique combinations of region, band, aspect
+    and store into several csv files for parallel processing"""
+    df = pd.read_csv(config.get('Paths', '_aggregates_vstations_csv_file'))
+    dfuni = df[['region_id', 'band', 'aspect']].copy()
+    dfuni = dfuni.drop_duplicates()
+    dfuni_split = np.array_split(dfuni, config.getint('General','NTASKS'))
+    for i in range(0,config.getint('General','NTASKS')):
+        dfuni_split[i].to_csv(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv", index=False)
+
+    """Run aggregation script in parallel"""
+    print("[i]  Running aggregation script on multiple cpus.")
+    print("")
+    procs = []
+    ## Start processes
+    for i in range(0,config.getint('General','NTASKS')):
+        proc = multiprocessing.Process(target=_worker_aggregation, args=(i, config))
+        procs.append(proc)
+        proc.start()
+    ## Complete processes
+    for proc in procs:
+        proc.join()
+    print("[i]  Number of cpus available: ", multiprocessing.cpu_count())
+    print("[i]  Number of tasks used: ", config.getint('General','NTASKS'))
+    print("[i]  Profile aggregation completed.")
+
+    """Clean up"""
+    for i in range(0,config.getint('General','NTASKS')):
+        os.remove(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv")
+    if config.getboolean('cleanup', 'dotinput'):
+        os.rmdir("./input")
+
+
+
+def setup(configfile, domain=''):
+    """Set relevant config parameters to run aggregating function
+    
+    This function takes the default configuration of the package and updates the settings 
+    with the provided configfile. It also creates the relevant directories if they don't exist yet.
+    
+    Parameters
+    ----------
+    configfile: str
+        'path/to/config.ini'
+    domain: str
+        domain descriptor to be appended to directory names
+
+    Returns
+    -------
+    config: an updated configparser.ConfigParser instance
+    """
+    config = configparser.ConfigParser()
+    config.optionxform = str
+    config.read(pkg_resources.resource_filename('snowpacktools', 'aggregatepro/aggregate.ini'))
+    config.read(configfile)
+    
+    if len(domain) == 0:
+        domain_appendix = ''
+    else:
+        domain_appendix = "-" + domain
+    #domain_appendix = os.path.basename(config['Paths']['_snp_output_dir']).replace("snp", "")  # e.g. "-subtirol10000"
+    
+    ## The following ones could be made accessible to user config for more flexible control?!
     config['Paths']['_aggregates_output_dir'] = "./output/snp-aggregates" + domain_appendix
     config['Paths']['_aggregates_figures_dir'] = "./output/snp-aggregates-figs" + domain_appendix
     
@@ -29,65 +103,33 @@ def aggregate(config):
                                                                                   'aggregatepro/aggregate_gridded_forecasts.R')
     config['Paths']['_aggregates_plotters_path'] = pkg_resources.resource_filename('snowpacktools', 
                                                                                    'aggregatepro/plotters.R')
+    config['Paths']['_ini_runtime_domain'] = configfile  # already set in the context of 'awsome', but not for outside standalone use
+    config['Aggregate']['DOMAIN'] = domain
 
-    if config['Paths']['_aggregates_ini'] == "NA":
-         config['Paths']['_aggregates_ini'] = pkg_resources.resource_filename('snowpacktools', 'aggregatepro/aggregate.ini')
-         
-    with open(config.get("Paths","_ini_temporary"), 'w') as configfile:
-        config.write(configfile)
+    if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file':
+        config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file']
 
+    """Create directories"""
+    os.makedirs("./output", exist_ok=True)
     os.makedirs(config['Paths']['_aggregates_output_dir'], exist_ok=True)
     os.makedirs(config['Paths']['_aggregates_figures_dir'], exist_ok=True)
     if os.path.exists("./input"):
-        del_dotinput = False
+        config.read_string("[cleanup]\ndotinput = False")
     else:
         os.makedirs("./input")
+        config.read_string("[cleanup]\ndotinput = True")
 
-    """Create data frame that stores unique combinations of region, band, aspect
-    and store into several csv files for parallel processing"""
-    # miframe = pd.MultiIndex.from_product([
-    #     df['region_id'].unique(), 
-    #     df['band'].unique(), 
-    #     df['aspect'].unique()
-    # ], names=['region', 'band', 'aspect']).to_frame(index=False)
-    # miframe_split = np.array_split(miframe, config.getint('Forecast','NTASKS'))
-    # for i in range(0,config.getint('Forecast','NTASKS')):
-    #     miframe_split[i].to_csv(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv", index=False)
-    df = pd.read_csv(config.get('Aggregate', '_vstations_csv_file'))
-    dfuni = df[['region_id', 'band', 'aspect']].copy()
-    dfuni = dfuni.drop_duplicates()
-    dfuni_split = np.array_split(dfuni, config.getint('Forecast','NTASKS'))
-    for i in range(0,config.getint('Forecast','NTASKS')):
-        dfuni_split[i].to_csv(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv", index=False)
+    with open(configfile, "w") as cfgfile:
+        config.write(cfgfile)
 
-    """Run aggregation script in parallel"""
-    print("[i]  Running aggregation script on multiple cpus.")
-    print("")
-    procs = []
-    ## Start processes
-    for i in range(0,config.getint('Forecast','NTASKS')):
-        proc = multiprocessing.Process(target=_worker_aggregation, args=(i, config))
-        procs.append(proc)
-        proc.start()
-    ## Complete processes
-    for proc in procs:
-        proc.join()
-    print("[i]  Number of cpus available: ", multiprocessing.cpu_count())
-    print("[i]  Number of tasks used: ", config.getint('Forecast','NTASKS'))
-    print("[i]  Profile aggregation completed.")
-
-    for i in range(0,config.getint('Forecast','NTASKS')):
-        os.remove(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv")
-    if del_dotinput:
-        os.rmdir("./input")
+    return config
 
 
 
 def _worker_aggregation(i, config):
-    """Call R script for aggregating gridded snow profiles stored in .pro files."""
-    rscript_path = pkg_resources.resource_filename('snowpacktools', 'aggregatepro/aggregate_gridded_forecasts.R')
+    """Worker function that calls R script for aggregating gridded snow profiles stored in .pro files."""
     returnCode = subprocess.call(["Rscript", config.get('Paths', '_aggregates_Rscript_path'), 
-                                  "--config", config.get("Paths","_ini_temporary"), 
+                                  "--config", config.get("Paths","_ini_runtime_domain"), 
                                   "--mp_csv", config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv"])
     if returnCode==0:
         print("[i]  Aggregation script successful for process number {}.".format(i))
@@ -96,15 +138,23 @@ def _worker_aggregation(i, config):
 
 
 
-
 if __name__ == "__main__":
-    """
-    Have to sort out config mess and declutter!
-    """
-    print("Not implemented yet")
 
-    # config = configparser.ConfigParser()
-    # config.read("/home/flo/documents/code/awsome/models/SNOWPACK/forecasts/input/forecast_localHF.ini")
+    if len(sys.argv) < 2 | len(sys.argv) > 3:
+        sys.exit("[E] Synopsis: python3 gridded.py configfile [domain]")
+
+    print(f'[i] Working directory set to {os.getcwd()}')
     
-    # aggregate(config)
+    configfile = sys.argv[1]
+    # configfile = "/home/flo/documents/code/awsome/models/SNOWPACK/forecasts/input/forecast_runtime_subtirol10000.ini"
+
+    if len(sys.argv) == 2:
+        config = setup(configfile)
+    elif len(sys.argv) == 3:
+        domain = sys.argv[2]
+        config = setup(configfile, domain)
+
+    aggregate(config)
+
+    
     

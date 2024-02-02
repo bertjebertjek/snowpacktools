@@ -12,6 +12,8 @@ tryCatch({
   stop("[E] Error when parsing inputs: ", e$message, call. = FALSE)
 })
 
+paste("[i] RScript: Working directory set to", getwd())
+
 library(sarp.snowprofile)
 library(sarp.snowprofile.alignment)
 library(sarp.snowprofile.pyface)
@@ -19,54 +21,40 @@ library(configr)
 library(stringr)
 library(data.table)
 
+
 ############
 # for local testing only (where temp file not avilable):
 # setwd("/home/flo/documents/code/awsome/models/SNOWPACK/forecasts")
-# config <- configr::read.config(file = "input/forecast.ini")  # for local testing
-# config$Forecast$SEASON_START <- as.Date("2022-11-01")
-# config$Forecast$SEASON_END <- as.Date("2023-03-01")
-# config$Forecast$DATE_OPERA <- as.Date("2023-02-28")
-# config$Forecast$TZONE <- "UTC"
-# config$Forecast$NTASKS <- 4
 
-# config$Aggregate$DAILY_TIME <- "06:00"
-# config$Aggregate$`_vstations_csv_file` <- "./input/vstations-subtirol10000.csv"
-
-# config$Paths$`_snp_ouput_dir` <- "./output/snp-subtirol10000"
-# config$Paths$`_aggregates_output_dir`  <- "./output/snp-aggregates-subtirol10000"
-# config$Paths$`_aggregates_figures_dir` <- "./output/snp-aggregates-figs-subtirol10000"
-# config$Paths$`_aggregates_plotters_path` <- "../profile-aggregation/plotters.R"
-
+# configfile = './input/forecast_runtime_subtirol10000.ini'
 # mp_csv <- "./input/aggregates_mp0.csv"
-# dtmax <- as.POSIXct(format(as.Date(dtmax), paste0("%Y-%m-%d ", 5, ":", minutes)), tz = config$Forecast$TZONE)
-
-# configfile <- "input/forecast_localHF.ini"
-# mp_csv <- "input/aggregates_mp0.csv"
 # i  <- 2
 #############
 
 ## Read config and csv files
 config <- configr::read.config(file = configfile)
-config_specific <- configr::read.config(file = config$Paths$`_aggregates_ini`)
-if (all(!names(config_specific) %in% names(config))) {
-  config <- c(config, config_specific)
-} else {
-  stop("[E] Aggregate ini file contains sections that are already defined in the forecast ini file.")
-}
+## deprecated: handled in gag!
+# config_specific <- configr::read.config(file = config$Paths$`_aggregates_ini`)
+# if (all(!names(config_specific) %in% names(config))) {
+#   config <- c(config, config_specific)
+# } else {
+#   stop("[E] Aggregate ini file contains sections that are already defined in the forecast ini file.")
+# }
 mp_df <- fread(mp_csv, sep = ",", data.table = FALSE)
-vstations <- fread(config$Aggregate$`_vstations_csv_file`, sep = ",", data.table = FALSE)
+vstations <- fread(config$Paths$`_aggregates_vstations_csv_file`, sep = ",", data.table = FALSE)
 source(config$Paths$`_aggregates_plotters_path`)
 
 ## Parse DTW weights
-config$Dtw_weights$dims = c("gtype", "hardness", "ddate")
-config$Dtw_weights$weights = c(as.double(config$Dtw_weights$GTYPE),
-                               as.double(config$Dtw_weights$HARDNESS),
-                               as.double(config$Dtw_weights$DDATE))
-config$Dtw_weights$dims <- config$Dtw_weights$dims[config$Dtw_weights$weights > 0]
-config$Dtw_weights$weights <- config$Dtw_weights$weights[config$Dtw_weights$weights > 0]
+config$DTW_weights$dims = c("gtype", "hardness", "ddate")
+config$DTW_weights$weights = c(as.double(config$DTW_weights$GTYPE),
+                               as.double(config$DTW_weights$HARDNESS),
+                               as.double(config$DTW_weights$DDATE))
+config$DTW_weights$dims <- config$DTW_weights$dims[config$DTW_weights$weights > 0]
+config$DTW_weights$weights <- config$DTW_weights$weights[config$DTW_weights$weights > 0]
 
 ## Get filenames of .pro files in _snp_output_dir
 file_names <- list.files(path = config$Paths$`_snp_ouput_dir`, pattern = "\\.pro$", full.names = TRUE)
+smet_names <- gsub("\\.pro", ".smet", file_names)
 # Extract the id between "VIR" and ".pro"
 file_ids <- str_extract(basename(file_names), "(?<=VIR)[^.]+(?=\\.pro)")
 
@@ -80,26 +68,36 @@ for (i in seq_len(nrow(mp_df))) {
     vstation_ids <- vstations$vstation[vstations$region_id == mp_df[i, "region_id"] & vstations$band == mp_df[i, "band"] & vstations$aspect == mp_df[i, "aspect"]]
     k_files <- which(file_ids %in% vstation_ids)
     file_names_sub <- file_names[k_files]
+    smet_names_sub <- smet_names[k_files]
     file_ids_sub <- file_ids[k_files]
 
     if (length(file_names_sub) >= 3) {
+      ##  Extract timezone from SMET Header
+      tz  <- sapply(smet_names_sub, function(fn) {
+        readSmet(fn, HeaderOnly = TRUE)$tz
+      })
+      tz_unique <- unique(tz)
+      if (length(tz_unique) > 1) stop("Your profiles refer to different time zones! Not supported.")
+      tz_string <- ifelse(tz_unique >= 0, paste0("Etc/GMT-", tz_unique), paste0("Etc/GMT+", abs(tz_unique)))
       ##  Generate relevant datetime period to aggregate
       #   based on first file dates and by assuming all .pro files have the same dates
-      fdatetime_max <- max(scanProfileDates(file_names_sub[1]))
-      dtmax <- min(fdatetime_max, as.POSIXct(config$Forecast$SEASON_END, tz = config$Forecast$TZONE))
       dtopera <- as.Date(config$Forecast$DATE_OPERA)
       dailytime_parts <- strsplit(config$Aggregate$DAILY_TIME, ":")[[1]]
       hours <- as.numeric(dailytime_parts[1])
       minutes <- as.numeric(dailytime_parts[2])
-      dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = config$Forecast$TZONE)
+      fdatetime_max <- max(scanProfileDates(file_names_sub[1], tz = tz_string))
+      dtmax <- min(fdatetime_max, as.POSIXct(format(as.Date(config$Forecast$SEASON_END), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
+      dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
       dtperiod <- seq(dtopera, dtmax, by = "day")
 
       
       ##  ---Read profiles----------------------------------------------------
       if (length(dtperiod) > 1) {
-        profileset <- snowprofileSet(do.call("c", lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, suppressWarnings = TRUE)))
+        profileset <- snowprofileSet(do.call("c", lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
+                                                         tz = config$Forecast$TZONE, suppressWarnings = TRUE)))
       } else if (length(dtperiod) == 1) {
-        profileset <- snowprofileSet(lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, suppressWarnings = TRUE))
+        profileset <- snowprofileSet(lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
+                                            tz = config$Forecast$TZONE, suppressWarnings = TRUE))
       } else {
         print(paste("[w] No profiles at the relevant dates for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
         quit(save = "no")
@@ -149,8 +147,8 @@ for (i in seq_len(nrow(mp_df))) {
           # avg1$meta <- avg1$meta[-k_rm, ]
           avg_avgs_dayBefore <- avg1$avgs[[avg1$meta$date == as.Date(dtopera)-1]]
           avg2 <- averageSPalongSeason(profileset, AvgDayBefore = avg_avgs_dayBefore, sm = sm, 
-                                       progressbar = config$Aggregate$debug_mode, verbose = config$Aggregate$debug_mode,
-                                       dims = config$Dtw_weights$dims, weights = config$Dtw_weights$weights)
+                                       progressbar = config$Aggregate$DEBUG_MODE, verbose = config$Aggregate$DEBUG_MODE,
+                                       dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
           avg <- concat_avgSP_timeseries(avg1, avg2)
         } else {
           init <- TRUE
@@ -162,8 +160,8 @@ for (i in seq_len(nrow(mp_df))) {
       }
       if (init) {
         avg <- averageSPalongSeason(profileset, sm = sm,
-                                    progressbar = config$Aggregate$debug_mode, verbose = config$Aggregate$debug_mode,
-                                    dims = config$Dtw_weights$dims, weights = config$Dtw_weights$weights)
+                                    progressbar = config$Aggregate$DEBUG_MODE, verbose = config$Aggregate$DEBUG_MODE,
+                                    dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
       }
 
       ## Save to file
@@ -209,10 +207,10 @@ for (i in seq_len(nrow(mp_df))) {
       print(paste("[i] Not aggregating b/c less than three profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
     }
   }, error = function(e) {
-    if (config$Aggregate$debug_mode) print(e$message)
+    if (config$Aggregate$DEBUG_MODE) print(e$message)
     print(paste("[E] Error while aggregating profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
   })
   if (inherits(iterstatus, "error")) next
 }  # END for loop
 
-if (config$Aggregate$debug_mode) print(round(Sys.time() - t0, 2))
+if (config$Aggregate$DEBUG_MODE) print(round(Sys.time() - t0, 2))
