@@ -1,5 +1,5 @@
 #' Call this script from the command line to aggregate gridded forecasts
-#' e.g., Rscript ./aggregate_gridded_forecasts.R --config input/forecast.ini --mp_csv input/aggregates_mp0.csv
+#' e.g., Rscript ./aggregate_gridded_forecasts.R --config config.ini --mp_csv input/aggregates_mp0.csv [--worker_int 1]
 #' AWSOME: it expects to be called from `forecasts` directory (or as specified in forecast_runtime_domain.ini: ['Paths']['_cwd_'])
 
 ## ---Setup ---------------------------------------------------------------
@@ -8,11 +8,14 @@ tryCatch({
   args <- commandArgs()
   configfile <- as.character(args[which(args == "--config") + 1])
   mp_csv  <- as.character(args[which(args == "--mp_csv") + 1])
+  worker <- as.character(args[which(args == "--worker_int") + 1])
 }, error = function(e) {
   stop("[E] Error when parsing inputs: ", e$message, call. = FALSE)
 })
 
-cat(paste("\n[i] RScript: Working directory set to", getwd()))
+if (length(worker) == 0) worker <- "1"
+
+cat(paste0("[i] (", worker, ") RScript: Working directory set to ", getwd(), "\n"))
 
 library(sarp.snowprofile)
 library(sarp.snowprofile.alignment)
@@ -82,27 +85,33 @@ for (i in seq_len(nrow(mp_df))) {
         profileset <- snowprofileSet(lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
                                             tz = config$Forecast$TZONE, suppressWarnings = TRUE))
       } else {
-        cat(paste("\n[w] No profiles at the relevant dates for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+        cat(paste0("[w] (", worker, ") No profiles at the relevant dates/timestamps for ", mp_df[i, "region_id"], " ", 
+                   mp_df[i, "band"], " ", mp_df[i, "aspect"], "\n"))
         quit(save = "no")
       }
-      ## This hack is necessary until the station_id is written to the
-      #  .pro files as StationName:
-      tryCatch({
-        sm <- summary(profileset)
-        # check when elev changes or when date jumps
-        sm$change <- c(0, diff(sm$elev) != 0 | diff(sm$date) > 1)
-        # hack a station_id to satisfy checks in aggregating function
-        sm$station_id <- cumsum(sm$change)
-      }, error = function(e){
-        stop("Cannot resolve station_id because not all profiles have identical dates available. Need station_id as StationName in .pro files.")
-      })
+      ## routine requires unique station names per station.
+      # 1) take from .pro files at StationName
+      # 2) if 1) not unique: use smet file
+      sm <- summary(profileset)
+      if (length(unique(sm$station_id)) == 1) {
+        tryCatch({
+          sm$station_id <- sapply(smet_names_sub, function(fn) {
+            readSmet(fn, HeaderOnly = TRUE)$station_id
+          })
+        }, error = function(e) {
+          if (config$Aggregate$DEBUG_MODE) cat(e$message, "\n")
+          stop(paste0("[E] (", worker, ") This error likely occurs when some vstations miss time stamps",
+                      " and the station_id is not available from .pro files but retrieved from .smet files. \n"))
+        })
+      }
+
       
       ## ---Preprocess profiles-----------------------------------------------
       profileset <- computeRTA(profileset)
       # profileset <- computePunstable(profileset)  # verify unit of ski pen!
       ## Create random ski_pen to test entire framework until ski_pen issue resolved
       warning("Random ski_pen used for testing purposes")
-      cat("\n[W] Random ski_pen used for testing purposes")
+      cat(paste0("[W] (", worker, ") Random ski_pen used for testing purposes \n"))
       profileset <- computePunstable(profileset, ski_pen = rep(0.2, length(profileset)))
       profileset <- snowprofileSet(lapply(profileset, function(sp) {
         labelPWL(sp, pwl_gtype = c("SH", "DH", "FCxr", "FC"), threshold_gtype = c("FC", "FCxr"), threshold_RTA = 0.8)
@@ -121,13 +130,6 @@ for (i in seq_len(nrow(mp_df))) {
           ## delete all past lead-time forecasts
           #  this will essentially re-compute the average profile from DATE_OPERA to the latest available date in .pro files
           init <- FALSE
-          ## following steps have been ported to concat_avgSP_timeseries()
-          # k_rm <- which(avg1$meta$date > as.Date(dtopera))
-          # avg1$avgs[k_rm] <- NULL
-          # try({
-          #   avg1$sets[k_rm] <- NULL
-          # })
-          # avg1$meta <- avg1$meta[-k_rm, ]
           avg_avgs_dayBefore <- avg1$avgs[[avg1$meta$date == as.Date(dtopera)-1]]
           avg2 <- averageSPalongSeason(profileset, AvgDayBefore = avg_avgs_dayBefore, sm = sm, 
                                        progressbar = config$Aggregate$DEBUG_MODE, verbose = config$Aggregate$DEBUG_MODE,
@@ -136,8 +138,8 @@ for (i in seq_len(nrow(mp_df))) {
         } else {
           init <- TRUE
           cat(paste(
-            "\n[w] Looks like the average profile on file is outdated/erroneous.",
-            "I re-initialize the average profile and overwrite the file."
+            "[w] (", worker, ") Looks like the average profile on file is outdated/erroneous.",
+            "I re-initialize the average profile and overwrite the file. \n"
           ))
         }
       }
@@ -147,53 +149,81 @@ for (i in seq_len(nrow(mp_df))) {
                                     dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
       }
 
-      ## Save to file
       if (sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
-        cat(paste("\n[w] More than 20% of average profiles were re-initialized for", 
+        cat(paste("[w] (", worker, ") More than 20% of average profiles were re-initialized for", 
                     mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"], 
-                    "--Consider investigating!"))
+                    "--Consider investigating! \n"))
       }
-      saveRDS(avg, paste0(
-        config$Paths$`_aggregates_output_dir`,
-        "/", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], ".rds"
-      ))
+      ## Save to file
+      if (config$Aggregate$SAVEAS_rds) {
+        saveRDS(avg, paste0(
+          config$Paths$`_aggregates_output_dir`,
+          "/", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], ".rds"
+        ))
+      }
+      
 
 
       ## ---Plot figures-------------------------------------------------------
-      pdate <- max(avg$meta$date)
-      leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA))  # (days)
 
       ## ---hand hardness profile-----------------------------------------------
       ## single hand hardness profile with instability distributions
-      fname <- paste0(
-        config$Paths$`_aggregates_figures_dir`, "/",
-        "hhp_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-        format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
-      )
-      png(filename = fname, width = 800, height = 700)
-      par(cex.lab = 1.65, cex.axis = 1.8, bg = "white")
-      plotTradAvgProfile(avg, pdate)
-      dev.off()
-
+      if (config$Aggregate$PLOT_HandHardness) {
+        for (pdate in avg$meta$date[avg$meta$date > as.Date(config$Forecast$DATE_OPERA) &
+                                    avg$meta$date < as.Date(config$Forecast$DATE_OPERA) + config$Aggregate$PLOT_Leadtime_days_HandHardness]) {
+          leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+          fname <- paste0(
+            config$Paths$`_aggregates_figures_dir`, "/",
+            "hhp_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
+            format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+          )
+          png(filename = fname, width = 800, height = 700)
+          par(cex.lab = 1.65, cex.axis = 1.8, bg = "white")
+          plotTradAvgProfile(avg, pdate)
+          dev.off()
+        }
+      }
+      
       ## ---avg timeseries-----------------------------------------------------
-      fname <- paste0(
-        config$Paths$`_aggregates_figures_dir`, "/",
-        "tsplain_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-        format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
-      )
-      png(filename = fname, width = 1200, height = 600)
-      par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
-      plotTSplainAvgProfile(avg)
-      dev.off()
+      if (config$Aggregate$PLOT_TSplain) {
+        pdate <- max(avg$meta$date)
+        leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+        fname <- paste0(
+          config$Paths$`_aggregates_figures_dir`, "/",
+          "tsplain_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
+          format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+        )
+        png(filename = fname, width = 1200, height = 600)
+        par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
+        plotTSplainAvgProfile(avg)
+        dev.off()
+      }
+
+      ## ---avg timeseries w/ stability overplot-------------------------------
+      if (config$Aggregate$PLOT_TSstability) {
+        pdate <- max(avg$meta$date)
+        leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+        fname <- paste0(
+          config$Paths$`_aggregates_figures_dir`, "/",
+          "tsstab_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
+          format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+        )
+        png(filename = fname, width = 1200, height = 600)
+        par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
+        plotTSstabilityAvgProfile(avg)
+        dev.off()
+      }
 
     } else {
-      cat(paste("\n[i] Not aggregating b/c less than three profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+      cat(paste0("[i] (", worker, ") Not aggregating b/c less than three profiles for ", mp_df[i, "region_id"], " ",
+                 mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
     }
   }, error = function(e) {
-    if (config$Aggregate$DEBUG_MODE) cat(paste0("\n", e$message))
-    cat(paste("\n[E] Error while aggregating profiles for", mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"]))
+    if (config$Aggregate$DEBUG_MODE) cat(paste0(e$message, "\n"))
+    cat(paste0("[E] (", worker, ") Error while aggregating profiles for ", mp_df[i, "region_id"], " ",
+               mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
   })
   if (inherits(iterstatus, "error")) next
 }  # END for loop
 
-if (config$Aggregate$DEBUG_MODE) cat(paste0("\n", round(Sys.time() - t0, 2)))
+if (config$Aggregate$DEBUG_MODE) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - a, 1)), "\n"))

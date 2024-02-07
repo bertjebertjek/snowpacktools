@@ -7,7 +7,9 @@ The package makes use of the R package [`sarp.snowprofile.alignment`](https://bi
 ## Module `gridded`
 The module can be used in a season-bulk mode or in an operational day-to-day mode. The season mode allows to compute a time series of the representative profile for an entire season at a time. In an operational setting, the module automatically aggregates the current day (and also few days ahead if available) before storing the intermediate results for the new computations the next day. On the next day, the previous lead-time forecasts will be overriden by more recent simulation data.
 
-The module can be run in parallel on multiple CPUs iterating through all region--elevation band--aspect combinations of the domain. Besides a config file (see `aggregate.ini` for a template), it requires a csv spreadsheet with the column names `vstation`, `region_id`, `band`, `aspect`. All available profiles that are listed in that spreadsheet will be aggregated by their mutual region, band, and aspect.
+The module can be run in parallel on multiple CPUs iterating through all region--elevation band--aspect combinations of the domain. Besides a config file (see `aggregate.ini` for a template), it requires a csv spreadsheet with the column names `vstation`, `region_id`, `band`, `aspect`. All available profiles that are listed in that spreadsheet will be aggregated by their mutual region, band, and aspect. If the aspect column is missing, the routine infers aspect from the last digit of `vstation` (where 'A' or '0' refers to flat, and 1--4 refer to north--west).
+
+Use command line utility like `python gridded.py configfile [domain]`.
 
 ### Potential for optimization
 
@@ -20,6 +22,7 @@ The module can be run in parallel on multiple CPUs iterating through all region-
 ## Requirements
 
 * The snow profile simulations need to be provided as `.pro` files. Required snow layer properties for full functionality include *grain type*, *hardness*, *deposition date*, *sphericity*, *viscous deformation rate*, *density*, *grain size*, *shear strength*, and the bulk *skier penetration depth*.
+* The current implementation also assumes `.smet` files in the same directory as the `.pro` files with the identical name for each vstation. The routine retrieves the time zone from the SMET files (and the station name if the StationName field in the .pro files is not unique).
 * R dependencies include `sarp.snowprofile`, `sarp.snowprofile.alignment`, `sarp.snowprofile.pyface`, `stringr`, `configr`, `progress`
 * To make the `sarp.snowprofile.pyface` package work seemlessly, it is advised to define an enviroment variable `RETICULATE_PYTHON` or `RETICULATE_PYTHON_ENV` that points to the python executable or python environment (venv or conda).
 

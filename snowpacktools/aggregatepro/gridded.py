@@ -35,6 +35,18 @@ def aggregate(config):
     """Create data frame that stores unique combinations of region, band, aspect
     and store into several csv files for parallel processing"""
     df = pd.read_csv(config.get('Paths', '_aggregates_vstations_csv_file'))
+    
+    if 'aspect' not in df.columns:
+        aspect_map = {
+        'A': 'flat',
+        '0': 'flat',
+        '1': 'north',
+        '2': 'east',
+        '3': 'south',
+        '4': 'west'
+        }
+        df['aspect'] = df['vstation'].str[-1].map(aspect_map)
+
     dfuni = df[['region_id', 'band', 'aspect']].copy()
     dfuni = dfuni.drop_duplicates()
     dfuni_split = np.array_split(dfuni, config.getint('General','NTASKS'))
@@ -127,12 +139,12 @@ def setup(configfile, domain=''):
     return config
 
 
-
 def _worker_aggregation(i, config):
     """Worker function that calls R script for aggregating gridded snow profiles stored in .pro files."""
     returnCode = subprocess.call(["Rscript", config.get('Paths', '_aggregates_Rscript_path'), 
                                   "--config", config.get("Paths","_ini_runtime_domain"), 
-                                  "--mp_csv", config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv"])
+                                  "--mp_csv", config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv",
+                                  "--worker_int", str(i)])
     if returnCode==0:
         print("[i]  Aggregation script successful for process number {}.".format(i))
     else:

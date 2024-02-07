@@ -110,3 +110,56 @@ plotTSplainAvgProfile <- function(avgSP) {
     )
 }
 
+plotTSstabilityAvgProfile <- function(avgSP) {
+    ## ---setup plot & preprocess----------------------------------------------
+    opar <- par()
+    on.exit(suppressWarnings(par(opar)))
+    par(mar = c(6.1, 6.1, 3.1, 5.1))
+
+    # make distribution of p_unstable available for plotting routine:
+    avgSP$avgs <- snowprofileSet(lapply(avgSP$avgs, function(avg) {
+        avg$layers$percentage <- avg$layers$ppu_all
+        avg
+    }))
+    
+    ## ---plot average profile-------------------------------------------------
+    xmax_extension <- 0.04
+    xmax <- max(avgSP$meta$date) + diff(range(avgSP$meta$date)) * xmax_extension
+    plot(avgSP$avgs, box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, colAlpha = 0.3, DateEnd = xmax)
+    plot(avgSP$avgs, box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, DateEnd = xmax, ColParam = "percentage", add = TRUE)
+    lines(avgSP$meta$date, avgSP$meta$hs_median, lwd = 2)
+    lines(avgSP$meta$date, avgSP$meta$hs_median - avgSP$meta$thicknessPPDF_median, lwd = 2, lty = "dashed")
+    mtext("Height (cm)", side = 2, line = 4, cex = opar$cex.lab)
+    # mtext("Aggregated and predominant snowpack conditions", side = 3, line = 1, cex = opar$cex.lab)
+    axis(2, at = pretty(c(0, max(avgSP$meta$hs))), las = 1)
+    legend("topleft",
+        c("<HS>", "<PP/DF>", "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr"),
+        lty = c("solid", "dashed", rep(NA, 9)), lwd = 2,
+        fill = getColoursGrainType(c(rep(NA, 3), "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr")),
+        density = c(rep(0, 3), rep(NA, 9)), border = "transparent",
+        horiz = FALSE, bty = "o", box.lwd = 0, cex = opar$cex.lab
+    )
+
+    ## add colorbar (not so straightforward in base R graphics..)
+    ClrRamp <- sapply(seq(0, 1, length.out = 100), function(alph) adjustcolor("black", alpha.f = alph))
+    
+    xleft <- par("usr")[2] - 0.015 * diff(par("usr")[1:2])
+    xright <- par("usr")[2]
+    ybottom <- par("usr")[3]
+    ytop <- par("usr")[4]
+
+    rect(xright - (0.8*xmax_extension) * diff(par("usr")[1:2]), ybottom, xright, ytop, col = par("bg"), border = NA)
+
+    colorLevels <- seq(0, 1, length.out = length(ClrRamp))
+    for (i in 1:(length(colorLevels) - 1)) {
+        rect(xleft, ybottom + colorLevels[i] * diff(par("usr")[3:4]),
+            xright, ybottom + colorLevels[i + 1] * diff(par("usr")[3:4]),
+            col = ClrRamp[i], border = NA
+        )
+    }
+
+    # Add labels to the colorbar
+    axis(4, at = seq(0, 1 * diff(par("usr")[3:4]), by = 0.25 * diff(par("usr")[3:4])), labels = seq(0, 1, by = 0.25))
+    mtext("Percentage of unstable grid points", side = 4, line = 2)
+
+}
