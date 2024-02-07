@@ -148,7 +148,7 @@ def _worker_aggregation(i, config):
     if returnCode==0:
         print("[i]  Aggregation script successful for process number {}.".format(i))
     else:
-        print("[E]  Aggregation script failed for process number {}!".format(i))
+        print("[E]  Aggregation script failed at least partially for process number {}!".format(i))
 
 
 

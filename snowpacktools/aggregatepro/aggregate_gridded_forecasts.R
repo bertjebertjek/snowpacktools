@@ -46,6 +46,7 @@ file_ids <- str_extract(basename(file_names), "(?<=VIR)[^.]+(?=\\.pro)")
 
 ## ---Iterate over combinations of region, band, aspect-----------------------
 t0 <- Sys.time()
+errorcode <- 0
 for (i in seq_len(nrow(mp_df))) {
   iterstatus <- tryCatch({
 
@@ -80,29 +81,32 @@ for (i in seq_len(nrow(mp_df))) {
       ##  ---Read profiles----------------------------------------------------
       if (length(dtperiod) > 1) {
         profileset <- snowprofileSet(do.call("c", lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
-                                                         tz = config$Forecast$TZONE, suppressWarnings = TRUE)))
+                                                         tz = tz_string, suppressWarnings = TRUE)))
       } else if (length(dtperiod) == 1) {
         profileset <- snowprofileSet(lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
-                                            tz = config$Forecast$TZONE, suppressWarnings = TRUE))
+                                            tz = tz_string, suppressWarnings = TRUE))
       } else {
         cat(paste0("[w] (", worker, ") No profiles at the relevant dates/timestamps for ", mp_df[i, "region_id"], " ", 
                    mp_df[i, "band"], " ", mp_df[i, "aspect"], "\n"))
-        quit(save = "no")
+        quit(save = "no", status = 0)
       }
-      ## routine requires unique station names per station.
-      # 1) take from .pro files at StationName
-      # 2) if 1) not unique: use smet file
+      ## routine requires unique station names per station:
       sm <- summary(profileset)
       if (length(unique(sm$station_id)) == 1) {
-        tryCatch({
-          sm$station_id <- sapply(smet_names_sub, function(fn) {
-            readSmet(fn, HeaderOnly = TRUE)$station_id
-          })
-        }, error = function(e) {
-          if (config$Aggregate$DEBUG_MODE) cat(e$message, "\n")
-          stop(paste0("[E] (", worker, ") This error likely occurs when some vstations miss time stamps",
-                      " and the station_id is not available from .pro files but retrieved from .smet files. \n"))
-        })
+        cat(paste0(
+          "[w] (", worker, ") No StationName with unique station_id present in .pro file(s)!",
+          " This might lead to unexpected errors/bugs. Update your .pro files. \n"
+        ))
+        # check when elev changes or when date jumps back into past
+        sm$change <- c(0, diff(sm$elev) != 0 | diff(sm$date) < 0)
+        # hack a station_id to satisfy checks in aggregating function
+        sm$station_id <- cumsum(sm$change)
+        if (length(unique(sm$station_id)) != length(file_names_sub)) {
+          cat(paste0(
+            "[w] (", worker, ") ", length(file_names_sub), " different profiles available,",
+            " but I had to create ", length(unique(sm$station_id)), " different profile_ids \n"
+          ))
+        }
       }
 
       
@@ -169,8 +173,8 @@ for (i in seq_len(nrow(mp_df))) {
       ## ---hand hardness profile-----------------------------------------------
       ## single hand hardness profile with instability distributions
       if (config$Aggregate$PLOT_HandHardness) {
-        for (pdate in avg$meta$date[avg$meta$date > as.Date(config$Forecast$DATE_OPERA) &
-                                    avg$meta$date < as.Date(config$Forecast$DATE_OPERA) + config$Aggregate$PLOT_Leadtime_days_HandHardness]) {
+        for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$Forecast$DATE_OPERA) &
+                                    avg$meta$date < as.Date(config$Forecast$DATE_OPERA) + as.double(config$Aggregate$PLOT_Leadtime_days_HandHardness)]) {
           leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
           fname <- paste0(
             config$Paths$`_aggregates_figures_dir`, "/",
@@ -223,7 +227,12 @@ for (i in seq_len(nrow(mp_df))) {
     cat(paste0("[E] (", worker, ") Error while aggregating profiles for ", mp_df[i, "region_id"], " ",
                mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
   })
-  if (inherits(iterstatus, "error")) next
+  if (inherits(iterstatus, "error")) {
+    errorcode <- 1
+    next
+  }
 }  # END for loop
 
 if (config$Aggregate$DEBUG_MODE) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - a, 1)), "\n"))
+
+quit(save = "no", status = errorcode)
