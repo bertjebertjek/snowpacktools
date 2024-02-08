@@ -30,13 +30,18 @@ mp_df <- fread(mp_csv, sep = ",", data.table = FALSE)
 vstations <- fread(config$Paths$`_aggregates_vstations_csv_file`, sep = ",", data.table = FALSE)
 source(config$Paths$`_aggregates_plotters_path`)
 
-## Parse DTW weights
-config$DTW_weights$dims = c("gtype", "hardness", "ddate")
-config$DTW_weights$weights = c(as.double(config$DTW_weights$GTYPE),
-                               as.double(config$DTW_weights$HARDNESS),
-                               as.double(config$DTW_weights$DDATE))
-config$DTW_weights$dims <- config$DTW_weights$dims[config$DTW_weights$weights > 0]
-config$DTW_weights$weights <- config$DTW_weights$weights[config$DTW_weights$weights > 0]
+## Parse DTW hyperparameter settings:
+config$Advanced$dims = c("gtype", "hardness", "ddate")
+config$Advanced$weights = c(as.double(config$Advanced$WEIGHTS_GTYPE),
+                               as.double(config$Advanced$WEIGHTS_HARDNESS),
+                               as.double(config$Advanced$WEIGHTS_DDATE))
+config$Advanced$dims <- config$Advanced$dims[config$Advanced$weights > 0]
+config$Advanced$weights <- config$Advanced$weights[config$Advanced$weights > 0]
+if (config$Aggregate$SAVEAS_rds) {
+  config$Advanced$keepprofiles <- TRUE
+} else if (config$Aggregate$SAVEAS_rds == "MINIMAL") {
+  config$Advanced$keepprofiles <- FALSE
+}
 
 ## Get filenames of .pro files in _aggregates_snp_pro_dir
 file_names <- list.files(path = config$Paths$`_aggregates_snp_pro_dir`, pattern = "\\.pro$", full.names = TRUE)
@@ -107,6 +112,11 @@ for (i in seq_len(nrow(mp_df))) {
             "[w] (", worker, ") ", length(file_names_sub), " different profiles available,",
             " but I had to create ", length(unique(sm$station_id)), " different profile_ids \n"
           ))
+          ## check whether higher frequency than daily smpling:
+          # tmp <- lapply(sm$station_id, function(sid) {
+          #   which(duplicated(sm$date[sm$station_id == sid]))
+          # })
+          # any(unlist(tmp))
         }
       }
 
@@ -135,15 +145,24 @@ for (i in seq_len(nrow(mp_df))) {
           ## delete all past lead-time forecasts
           #  this will essentially re-compute the average profile from DATE_OPERA to the latest available date in .pro files
           init <- FALSE
-          avg_avgs_dayBefore <- avg1$avgs[[avg1$meta$date == as.Date(dtopera)-1]]
+          tryCatch({
+            avg_avgs_dayBefore <- avg1$avgs[[which(avg1$meta$date == (as.Date(dtopera)-1))]]
+          }, error = function(e) {
+            stop(paste0("Between your average profile on file and your DATE_OPERA seem to lie some days without data. ",
+                        "Please set back your DATE_OPERA or delete the relevant .rds file with the average profile ",
+                        "if you want to start computations from scratch."))
+          })
+          
           avg2 <- averageSPalongSeason(profileset, AvgDayBefore = avg_avgs_dayBefore, sm = sm, 
                                        progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
-                                       dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
+                                       keep.profiles = config$Advanced$keepprofiles,
+                                       dims = config$Advanced$dims, weights = config$Advanced$weights,
+                                       simType = tolower(config$Advanced$SIMTYPE))
           avg <- concat_avgSP_timeseries(avg1, avg2)
         } else {
           init <- TRUE
-          cat(paste(
-            "[w] (", worker, ") Looks like the average profile on file is outdated/erroneous.",
+          cat(paste0(
+            "[w] (", worker, ") Looks like the average profile on file is outdated/erroneous. ",
             "I re-initialize the average profile and overwrite the file. \n"
           ))
         }
@@ -151,7 +170,9 @@ for (i in seq_len(nrow(mp_df))) {
       if (init) {
         avg <- averageSPalongSeason(profileset, sm = sm,
                                     progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
-                                    dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
+                                    keep.profiles = config$Advanced$keepprofiles,
+                                    dims = config$Advanced$dims, weights = config$Advanced$weights,
+                                    simType = tolower(config$Advanced$SIMTYPE))
       }
 
       if (sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
@@ -176,7 +197,7 @@ for (i in seq_len(nrow(mp_df))) {
       if (config$Aggregate$PLOT_HandHardness) {
         for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$Forecast$DATE_OPERA) &
                                     avg$meta$date < as.Date(config$Forecast$DATE_OPERA) + as.double(config$Aggregate$PLOT_Leadtime_days_HandHardness)]) {
-          leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+          leadtime <- as.numeric(as.Date(pdate) - as.Date(config$Forecast$DATE_OPERA)) # (days)
           fname <- paste0(
             config$Paths$`_aggregates_figures_dir`, "/",
             "hhp_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
@@ -224,10 +245,10 @@ for (i in seq_len(nrow(mp_df))) {
                  mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
     }
   }, error = function(e) {
-    if (config$Aggregate$DEBUG_MODE) cat(paste0(e$message, "\n"))
-    cat(paste0("[E] (", worker, ") Error while aggregating profiles for ", mp_df[i, "region_id"], " ",
-               mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
-  })
+    cat(paste0(e$message, "\n"))
+    cat(paste0("\n\n[E] (", worker, ") Error while aggregating profiles for ", mp_df[i, "region_id"], " ",
+               mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n\n"))
+  })  # END tryCatch
   if (inherits(iterstatus, "error")) {
     errorcode <- 1
     next
