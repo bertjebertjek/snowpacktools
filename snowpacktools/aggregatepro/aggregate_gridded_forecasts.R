@@ -93,15 +93,16 @@ for (i in seq_len(nrow(mp_df))) {
       ## routine requires unique station names per station:
       sm <- summary(profileset)
       if (length(unique(sm$station_id)) == 1) {
-        cat(paste0(
-          "[w] (", worker, ") No StationName with unique station_id present in .pro file(s)!",
-          " This might lead to unexpected errors/bugs. Update your .pro files. \n"
-        ))
         # check when elev changes or when date jumps back into past
         sm$change <- c(0, diff(sm$elev) != 0 | diff(sm$date) < 0)
         # hack a station_id to satisfy checks in aggregating function
         sm$station_id <- cumsum(sm$change)
+        ## The hack should actually do just fine. Anyway, include check and messaging in case of weird results:
         if (length(unique(sm$station_id)) != length(file_names_sub)) {
+          cat(paste0(
+            "[w] (", worker, ") No StationName with unique station_id present in .pro file(s)!",
+            " This might lead to unexpected errors/bugs. Update your .pro files. \n"
+          ))
           cat(paste0(
             "[w] (", worker, ") ", length(file_names_sub), " different profiles available,",
             " but I had to create ", length(unique(sm$station_id)), " different profile_ids \n"
@@ -136,7 +137,7 @@ for (i in seq_len(nrow(mp_df))) {
           init <- FALSE
           avg_avgs_dayBefore <- avg1$avgs[[avg1$meta$date == as.Date(dtopera)-1]]
           avg2 <- averageSPalongSeason(profileset, AvgDayBefore = avg_avgs_dayBefore, sm = sm, 
-                                       progressbar = config$Aggregate$DEBUG_MODE, verbose = config$Aggregate$DEBUG_MODE,
+                                       progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
                                        dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
           avg <- concat_avgSP_timeseries(avg1, avg2)
         } else {
@@ -149,7 +150,7 @@ for (i in seq_len(nrow(mp_df))) {
       }
       if (init) {
         avg <- averageSPalongSeason(profileset, sm = sm,
-                                    progressbar = config$Aggregate$DEBUG_MODE, verbose = config$Aggregate$DEBUG_MODE,
+                                    progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
                                     dims = config$DTW_weights$dims, weights = config$DTW_weights$weights)
       }
 
@@ -233,6 +234,6 @@ for (i in seq_len(nrow(mp_df))) {
   }
 }  # END for loop
 
-if (config$Aggregate$DEBUG_MODE) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - a, 1)), "\n"))
+if (config$Aggregate$DEBUG_MODE) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - t0, 1)), "\n"))
 
 quit(save = "no", status = errorcode)

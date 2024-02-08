@@ -46,6 +46,7 @@ def aggregate(config):
         '4': 'west'
         }
         df['aspect'] = df['vstation'].str[-1].map(aspect_map)
+        df.to_csv(config.get('Paths', '_aggregates_vstations_csv_file'), index=False)
 
     dfuni = df[['region_id', 'band', 'aspect']].copy()
     dfuni = dfuni.drop_duplicates()
