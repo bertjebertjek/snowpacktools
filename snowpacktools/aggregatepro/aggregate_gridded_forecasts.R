@@ -176,9 +176,9 @@ for (i in seq_len(nrow(mp_df))) {
       }
 
       if (sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
-        cat(paste("[w] (", worker, ") More than 20% of average profiles were re-initialized for", 
-                    mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"], 
-                    "--Consider investigating! \n"))
+        cat(paste0("[w] (", worker, ") More than 20% of average profiles were re-initialized for ", 
+                    mp_df[i, "region_id"], " ", mp_df[i, "band"], " ", mp_df[i, "aspect"], 
+                    " --Consider investigating! \n"))
       }
       ## Save to file
       if (config$Aggregate$SAVEAS_rds) {
