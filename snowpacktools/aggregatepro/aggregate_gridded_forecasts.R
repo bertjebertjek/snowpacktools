@@ -13,7 +13,7 @@ tryCatch({
   stop("[E] Error when parsing inputs: ", e$message, call. = FALSE)
 })
 
-if (length(worker) == 0) worker <- "1"
+if (length(worker) == 0) worker <- "0"
 
 cat(paste0("[i] (", worker, ") RScript: Working directory set to ", getwd(), "\n"))
 
@@ -43,6 +43,20 @@ if (config$Aggregate$SAVEAS_rds) {
   config$Advanced$keepprofiles <- FALSE
 }
 
+## Initialize progressbar
+if (as.logical(config$Aggregate$PROGRESSBAR) && worker == "0" && requireNamespace("progress", quietly = TRUE)) {
+  progressbar = TRUE
+  pb <- progress::progress_bar$new(
+    format = paste0("(worker 0) [:bar] :percent in :elapsed | eta: :eta"),
+    total = nrow(mp_df), clear = FALSE, width= 60)
+  cat(paste0("[i] (", worker, ") Showing progressbar only for first worker.\n", 
+             "        Information will be more accurate the more different\n",
+             "        region--band-asspect combinations this worker will have to carry out.\n",
+             "        It might take a while for the progressbar to appear."))
+} else {
+  progressbar = FALSE
+}
+
 ## Get filenames of .pro files in _aggregates_snp_pro_dir
 file_names <- list.files(path = config$Paths$`_aggregates_snp_pro_dir`, pattern = "\\.pro$", full.names = TRUE)
 smet_names <- gsub("\\.pro", ".smet", file_names)
@@ -53,6 +67,7 @@ file_ids <- str_extract(basename(file_names), "(?<=VIR)[^.]+(?=\\.pro)")
 t0 <- Sys.time()
 errorcode <- 0
 for (i in seq_len(nrow(mp_df))) {
+  if (progressbar) pb$tick()
   iterstatus <- tryCatch({
 
     ## ---Parse files and query dates-----------------------------------------
@@ -154,7 +169,7 @@ for (i in seq_len(nrow(mp_df))) {
           })
           
           avg2 <- averageSPalongSeason(profileset, AvgDayBefore = avg_avgs_dayBefore, sm = sm, 
-                                       progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
+                                       progressbar = FALSE, verbose = FALSE,
                                        keep.profiles = config$Advanced$keepprofiles,
                                        dims = config$Advanced$dims, weights = config$Advanced$weights,
                                        simType = tolower(config$Advanced$SIMTYPE))
@@ -169,7 +184,7 @@ for (i in seq_len(nrow(mp_df))) {
       }
       if (init) {
         avg <- averageSPalongSeason(profileset, sm = sm,
-                                    progressbar = config$Aggregate$DEBUG_MODE, verbose = FALSE,
+                                    progressbar = FALSE, verbose = FALSE,
                                     keep.profiles = config$Advanced$keepprofiles,
                                     dims = config$Advanced$dims, weights = config$Advanced$weights,
                                     simType = tolower(config$Advanced$SIMTYPE))

@@ -15,6 +15,8 @@ import pkg_resources
 import numpy as np
 import pandas as pd
 
+from datetime import datetime
+
 def aggregate(config):
     """Compute average/representative snow profiles from snowpack simulations stored in .pro files.
 
@@ -50,15 +52,34 @@ def aggregate(config):
 
     dfuni = df[['region_id', 'band', 'aspect']].copy()
     dfuni = dfuni.drop_duplicates()
+
+    ## arrange the data frame in a way that alternates combinations with few and many stations, 
+    ## so that resulting workers have roughly the same amount of work
+    station_counts = df.groupby(['region_id', 'band', 'aspect'])['vstation'].nunique().reset_index(name='nstations')
+    dfuni = pd.merge(dfuni, station_counts, on=['region_id', 'band', 'aspect'], how='left')
+    dfuni = dfuni.sort_values(by='nstations').reset_index(drop=True)
+    midpoint = len(dfuni) // 2
+    if len(dfuni) % 2 == 0:
+        # Even number of rows: interleave directly
+        dfuni_alternating = pd.concat([dfuni[:midpoint].reset_index(drop=True),
+                                    dfuni[midpoint:].reset_index(drop=True).iloc[::-1]], axis=1).stack().reset_index(drop=True)
+    else:
+        # Odd number of rows: handle the last row separately
+        dfuni_alternating = pd.concat([dfuni[:midpoint+1].reset_index(drop=True),
+                                    dfuni[midpoint+1:].reset_index(drop=True).iloc[::-1]], axis=1).stack().reset_index(drop=True)
+        
+    dfuni = pd.DataFrame(dfuni_alternating.values.reshape(dfuni.shape), columns = dfuni.columns)
+    
+
     dfuni_split = np.array_split(dfuni, config.getint('General','NTASKS'))
     for i in range(0,config.getint('General','NTASKS')):
         dfuni_split[i].to_csv(config.get('Paths','_aggregates_mp_csv') + str(i) + ".csv", index=False)
 
     """Run aggregation script in parallel"""
-    print("[i]  Running aggregation script on multiple cpus.")
-    print("")
+    print(f"[i]  Running aggregation script on {config.getint('General','NTASKS')} cpus.\n\n")
     procs = []
     ## Start processes
+    t0 = datetime.now()
     for i in range(0,config.getint('General','NTASKS')):
         proc = multiprocessing.Process(target=_worker_aggregation, args=(i, config))
         procs.append(proc)
@@ -66,9 +87,10 @@ def aggregate(config):
     ## Complete processes
     for proc in procs:
         proc.join()
-    print("[i]  Number of cpus available: ", multiprocessing.cpu_count())
+    duration = datetime.now() - t0
+    print("\n[i]  Number of cpus available: ", multiprocessing.cpu_count())
     print("[i]  Number of tasks used: ", config.getint('General','NTASKS'))
-    print("[i]  Profile aggregation completed.")
+    print(f"[i]  Profile aggregation completed in {':'.join(str(duration).split(':')[:2])} hours.")
 
     """Clean up"""
     for i in range(0,config.getint('General','NTASKS')):
