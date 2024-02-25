@@ -72,6 +72,8 @@ def add_snp_metadata(tree: object):
 
     child_metaData                  = xroot.find(caaml_ns + "metaData")
     child_customData                = child_metaData.find(caaml_ns + "customData")
+    if not child_customData:
+        child_customData = et.SubElement(child_metaData, caaml_ns + "customData")
     child_snp                       = et.SubElement(child_customData,caaml_ns + 'snp')
     child_CanopyHeight              = et.SubElement(child_snp,caaml_ns + 'CanopyHeight')
     child_CanopyBasalArea           = et.SubElement(child_snp,caaml_ns + 'CanopyBasalArea')
@@ -143,6 +145,7 @@ def add_monti_density(file, new_file):
         """Get grain forms and hardness to estimate density"""
         for form in layer.iter(caaml_ns + 'grainFormPrimary'):
             grainFormPrimary = form.text
+        grainFormSecondary = ""
         for form in layer.iter(caaml_ns + 'grainFormSecondary'):
             grainFormSecondary = form.text
         for val_hardness in layer.iter(caaml_ns + 'hardness'):
