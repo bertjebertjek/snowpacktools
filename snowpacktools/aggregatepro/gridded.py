@@ -143,8 +143,8 @@ def setup(configfile, domain=''):
 
     if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file':
         config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file']
-    if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_ouput_dir':
-        config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_ouput_dir']
+    if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_output_dir':
+        config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_output_dir']
 
     """Create directories"""
     os.makedirs("./output", exist_ok=True)
