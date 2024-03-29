@@ -178,7 +178,6 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
             if not np.isscalar(profs[ts]['grain type (Swiss Code F1F2F3)']):
                 profs[ts]['graintype'] = pro_helper.slf_graintypes_to_ICSSG(profs[ts]['grain type (Swiss Code F1F2F3)'])
 
-        
         """NANs"""
         # for ts in prof['data'].keys():
         #     for var in prof['data'][ts].keys():

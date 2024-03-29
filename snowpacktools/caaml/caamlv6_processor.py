@@ -152,7 +152,18 @@ def add_monti_density(file, new_file):
             hardness = val_hardness.text
         
         child_density.text = str(_monti_density(grainFormPrimary, grainFormSecondary, hardness))
-    
+
+        """Check LWC/wetness (only full values are allowed)"""
+        for val_wetness in layer.iter(caaml_ns + 'wetness'):
+            if val_wetness.text == "D-M":
+                val_wetness.text = "M" # LWC: 0.01
+            elif val_wetness.text == "M-W":
+                val_wetness.text = "W" # LWC: 0.03
+            elif val_wetness.text == "W-V":
+                val_wetness.text = "V" # LWC: 0.08
+            elif val_wetness.text == "V-S":
+                val_wetness.text = "S" # LWC: 0.15
+                
     tree.write(new_file,encoding='UTF-8', method="xml", doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
 
