@@ -4,3 +4,4 @@ graft snowpacktools/avapro/graphics
 graft snowpacktools/snowpro/models
 global-include *.mplstyle
 global-include *.R
+global-include *.ini
