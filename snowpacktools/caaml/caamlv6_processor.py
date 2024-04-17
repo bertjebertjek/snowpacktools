@@ -73,11 +73,11 @@ def add_snp_metadata(tree: object):
 
     child_metaData                  = xroot.find(caaml_ns + "metaData")
     child_customData                = child_metaData.find(caaml_ns + "customData")
-    if not child_customData:
+    if child_customData is None:
         child_customData            = et.SubElement(child_metaData, caaml_ns + "customData")
 
     child_snp                       = child_customData.find(caaml_ns + "snp")
-    if not child_snp:
+    if child_snp is None:
         """Add SNP relevant metadata to CAAML file, if not existing"""
         child_snp                       = et.SubElement(child_customData,caaml_ns + 'snp')
         child_CanopyHeight              = et.SubElement(child_snp,caaml_ns + 'CanopyHeight')
@@ -100,12 +100,12 @@ def add_snp_metadata(tree: object):
     
     """Add name to location reference if missing"""
     child_name                  = child_locRef.find(caaml_ns + "name")
-    if not child_name.text:
+    if child_name.text is None:
         child_name.text = "nameless"
 
     """Add slope angle to location reference if missing"""
     child_validSlopeAngle       = child_locRef.find(caaml_ns + "validSlopeAngle")
-    if not child_validSlopeAngle:
+    if child_validSlopeAngle is None:
         child_validSlopeAngle    = et.SubElement(child_locRef,caaml_ns + "validSlopeAngle")
         child_SlopeAnglePosition = et.SubElement(child_validSlopeAngle,caaml_ns + "SlopeAnglePosition")
         child_position_angle     = et.SubElement(child_SlopeAnglePosition,caaml_ns + "position")
@@ -113,7 +113,7 @@ def add_snp_metadata(tree: object):
 
     """Add aspect to location reference if missing"""
     child_validAspect    = child_locRef.find(caaml_ns + "validAspect")
-    if not child_validAspect:
+    if child_validAspect is None:
         child_validAspect    = et.SubElement(child_locRef,caaml_ns + "validAspect")
         child_AspectPosition = et.SubElement(child_validAspect,caaml_ns + "AspectPosition")
         child_positionA      = et.SubElement(child_AspectPosition,caaml_ns + "position")
@@ -161,7 +161,7 @@ def add_monti_density(file, new_file):
     
     """Check temperature profile (needs to be ascending order for SNP)"""
     child_tempProfile = child_SnowProfileMeasurements.find(caaml_ns + 'tempProfile')
-    if not child_tempProfile:
+    if child_tempProfile is None:
         print(f"[i]  Temperature profile missing for observed snow profile {file.split('/')[-1]}. File will be removed.")
         os.remove(file)
         return
@@ -216,7 +216,7 @@ def add_monti_density(file, new_file):
         """Check if grain size is available"""
         if grainFormPrimary in ["PP","DF","FC","RG"]:
             child_grainType = layer.find(caaml_ns + 'grainSize')
-            if not child_grainType:
+            if child_grainType is None:
                 print(f"[i]  Grain size is missing for observed snow profile {file.split('/')[-1]}. File will be removed.")
                 os.remove(file)
                 return
