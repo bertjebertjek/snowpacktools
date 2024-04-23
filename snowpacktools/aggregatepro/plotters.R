@@ -104,8 +104,8 @@ plotTSplainAvgProfile <- function(avgSP) {
     legend("topleft",
         c("<HS>", "<PP/DF>", "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr"),
         lty = c("solid", "dashed", rep(NA, 9)), lwd = 2,
-        fill = getColoursGrainType(c(rep(NA, 3), "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr")),
-        density = c(rep(0, 3), rep(NA, 9)), border = "transparent",
+        fill = getColoursGrainType(c(rep(NA, 2), "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr")),
+        density = c(rep(0, 2), rep(NA, 9)), border = "transparent",
         horiz = FALSE, bty = "o", box.lwd = 0, cex = opar$cex.lab
     )
 }
@@ -135,8 +135,8 @@ plotTSstabilityAvgProfile <- function(avgSP) {
     legend("topleft",
         c("<HS>", "<PP/DF>", "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr"),
         lty = c("solid", "dashed", rep(NA, 9)), lwd = 2,
-        fill = getColoursGrainType(c(rep(NA, 3), "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr")),
-        density = c(rep(0, 3), rep(NA, 9)), border = "transparent",
+        fill = getColoursGrainType(c(rep(NA, 2), "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr")),
+        density = c(rep(0, 2), rep(NA, 9)), border = "transparent",
         horiz = FALSE, bty = "o", box.lwd = 0, cex = opar$cex.lab
     )
 

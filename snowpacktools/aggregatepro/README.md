@@ -1,34 +1,26 @@
 # Aggregatepro
 
-**Aggregatepro** is a subpackage of the Python package `snowpacktools`. It implements computing of representative (*average*) snow profiles from a larger set of individual profiles. The subpackage currently contains one module `gridded` that allows users to aggregate gridded snowpack simulations into representative profiles. 
+**Aggregatepro** is a subpackage of the Python package `snowpacktools`. It implements computing of representative (*average*) snow profiles from a larger set of individual profiles (Herla et al, 2022). The subpackage currently contains one module `gridded` that allows users to aggregate gridded snowpack simulations into representative profiles. 
 
-The package makes use of the R package [`sarp.snowprofile.alignment`](https://bitbucket.org/sfu-arp/sarp.snowprofile.alignment/src/master/) which computes the profile aggregation.
+The package makes use of the R package [`sarp.snowprofile.alignment`](https://bitbucket.org/sfu-arp/sarp.snowprofile.alignment/src/master/) which runs the profile aggregation under the hood.
 
 ## Module `gridded`
-The module can be used in a season-bulk mode or in an operational day-to-day mode. The season mode allows to compute a time series of the representative profile for an entire season at a time. In an operational setting, the module automatically aggregates the current day (and also few days ahead if available) before storing the intermediate results for the new computations the next day. On the next day, the previous lead-time forecasts will be overriden by more recent simulation data.
+The module will aggregate simulated snow profiles from given combinations of region, elevation band, and aspect into a representative profile. This representative profile can then be plotted as time series or traditional hand hardness profile. Instability distributions will be highlighted so that users can quickly understand which layers are modeled with largely poor instabilities and when these instabilities are most likely to occur. The currently implemented main stability tool is from Mayer et al (2022) and predicts **dry** snow layer instability based on skier triggering, called *p_unstable*.
 
-The module can be run in parallel on multiple CPUs iterating through all region--elevation band--aspect combinations of the domain. Besides a config file (see `aggregate.ini` for a template), it requires a csv spreadsheet with the column names `vstation`, `region_id`, `band`, `aspect`. All available profiles that are listed in that spreadsheet will be aggregated by their mutual region, band, and aspect. If the aspect column is missing, the routine infers aspect from the last digit of `vstation` (where 'A' or '0' refers to flat, and 1--4 refer to north--west).
+Here is a representative snow profile for a small forecast subregion in northern Norway, 300-600 m asl, north facing 38 degree slope:
+![](aux/tsstab_kattfjordeidet_0300-0600_north_240326+0d.png)
 
-Use command line utility like `python gridded.py configfile [domain]`.
+And here is a hand hardness profile from an unstable day early January, that compares the process-based dry snow instability index SK38 & RTA with p_unstable:    
+![](aux/hhp_kattfjordeidet_0300-0600_north_240108+0d.png)
 
-### Potential for optimization
+### Usage
+The module can be used in a bulk mode (research mode) or in an operational day-to-day mode, called either as script with command line arguments, or interactively within Python. The season mode allows to compute a time series of the representative profile for an entire season at a time. In an operational setting, the module aggregates the current day (and also several days of forecasts if available) before storing the intermediate results for the new computations the next day. On the next day, the previous lead-time forecasts will be overriden by more recent simulation data.
 
- * Currently, aggregation is only supported for daily sampling. Useful to adjust for any time sampling, or at least hourly, in the future.
- * When implementing hourly (or finer than daily) sampling, update 'valid' string in figures to datetime instead of date, and also include a 'computed' string (that represents DATE_OPERA).
- * Besides the static `.png` figures created by the current implementation, there is room for designing interactive visualizations that allow forecasters to inspect various spatial distributions from the underlying individual profiles. Could be implemented.
-     - To facilitate these interactions, layers from the average profile are backtracked to all underlying individual layers. Therefore, all the data from the individual profiles needs to be stored in `.rds` files, which consumes a lot of space. Either the underlying aggregation routine needs to be redesigned to allow for backtracking of layers to the original `.pro` files, or the disk space needs to be available (at least for the current season).
- 
+The module can be run efficiently and in parallel on multiple CPUs. It is feasible to apply the algorithm to groups of profiles counting up to few hundred profiles. Start with fewer profiles and explore computational demand as you increase the data sets.
 
-## Requirements
-
-* The snow profile simulations need to be provided as `.pro` files. Required snow layer properties for full functionality include *grain type*, *hardness*, *deposition date*, *sphericity*, *viscous deformation rate*, *density*, *grain size*, *shear strength*, and the bulk *skier penetration depth*.
-* The current implementation also assumes `.smet` files in the same directory as the `.pro` files with the identical name for each vstation. The routine retrieves the time zone from the SMET files (and the station name if the StationName field in the .pro files is not unique).
-* R dependencies include `sarp.snowprofile`, `sarp.snowprofile.alignment`, `sarp.snowprofile.pyface`, `stringr`, `configr`, `progress`
-* To make the `sarp.snowprofile.pyface` package work seemlessly, it is advised to define an enviroment variable `RETICULATE_PYTHON` or `RETICULATE_PYTHON_ENV` that points to the python executable or python environment (venv or conda).
+**For more detailed documentation, particularly a list of dependencies and data requirements, see the module-level documentation provided by `gridded`.**
 
 
-## Notes
- * need skier penetration depth in `.pro` files (code 0607, created ticket in official SNOWPACK gitlab)
- * write vstation id (VIR###) to pro file as StationName
- * write ddate to pro file (code 0505, SNOWPACK ini: [Output] PROF_AGE_OR_DATE = DATE)
- * vstations csv: elevation band spans huge vertical drop (1700--2300m), may want to include an intermediate band treeline for more meaningful aggregation?!
+# References
+1. Mayer, S., van Herwijnen, A., Techel, F., and Schweizer, J.: A random forest model to assess snow instability from simulated snow stratigraphy, The Cryosphere, 16, 4593–4615, https://doi.org/10.5194/tc-16-4593-2022, 2022.
+2. Herla, F., Haegeli, P., and Mair, P.: A data exploration tool for averaging and accessing large data sets of snow stratigraphy profiles useful for avalanche forecasting, The Cryosphere, 16, 3149–3162, https://doi.org/10.5194/tc-16-3149-2022, 2022.

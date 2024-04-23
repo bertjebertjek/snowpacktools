@@ -1,6 +1,10 @@
+#' Worker R script as part of the python module snowpro.aggregatepro.gridded
+#' 
 #' Call this script from the command line to aggregate gridded forecasts
-#' e.g., Rscript ./aggregate_gridded_forecasts.R --config config.ini --mp_csv input/aggregates_mp0.csv [--worker_int 1]
-#' AWSOME: it expects to be called from `forecasts` directory (or as specified in forecast_runtime_domain.ini: ['Paths']['_cwd_'])
+#' e.g., Rscript ./aggregate_gridded_forecasts.R --config config.ini --mp_csv input/aggregates_groupings/domain-0.csv [--worker_int 1]
+#' @AWSOME: it expects to be called from the `forecasts` directory (or as specified in forecast_runtime_domain.ini: ['Paths']['_cwd_'])
+#' 
+#' <fherla>
 
 ## ---Setup ---------------------------------------------------------------
 ## Parse inputs
@@ -32,19 +36,19 @@ source(config$Paths$`_aggregates_plotters_path`)
 
 ## Parse DTW hyperparameter settings:
 config$Advanced$dims = c("gtype", "hardness", "ddate")
-config$Advanced$weights = c(as.double(config$Advanced$WEIGHTS_GTYPE),
-                               as.double(config$Advanced$WEIGHTS_HARDNESS),
-                               as.double(config$Advanced$WEIGHTS_DDATE))
+config$Advanced$weights = c(as.double(config$Advanced$weights_gtype),
+                               as.double(config$Advanced$weights_hardness),
+                               as.double(config$Advanced$weights_ddate))
 config$Advanced$dims <- config$Advanced$dims[config$Advanced$weights > 0]
 config$Advanced$weights <- config$Advanced$weights[config$Advanced$weights > 0]
-if (config$Aggregate$SAVEAS_rds) {
+if (config$Aggregate$saveas_rds) {
   config$Advanced$keepprofiles <- TRUE
-} else if (config$Aggregate$SAVEAS_rds == "MINIMAL") {
+} else if (config$Aggregate$saveas_rds == "MINIMAL") {
   config$Advanced$keepprofiles <- FALSE
 }
 
 ## Initialize progressbar
-if (as.logical(config$Aggregate$PROGRESSBAR) && worker == "0" && requireNamespace("progress", quietly = TRUE)) {
+if (as.logical(config$Aggregate$progressbar) && worker == "0" && requireNamespace("progress", quietly = TRUE)) {
   progressbar = TRUE
   pb <- progress::progress_bar$new(
     format = paste0("(worker 0) [:bar] :percent in :elapsed | eta: :eta"),
@@ -62,6 +66,9 @@ file_names <- list.files(path = config$Paths$`_aggregates_snp_pro_dir`, pattern 
 smet_names <- gsub("\\.pro", ".smet", file_names)
 # Extract the id between "VIR" and ".pro"
 file_ids <- str_extract(basename(file_names), "(?<=VIR)[^.]+(?=\\.pro)")
+## Get filenames of .rds files in _aggregates_output_dir
+rds_files <- list.files(path = config$Paths$`_aggregates_output_dir`, pattern = "\\.rds$", full.names = TRUE)
+rds_names <- basename(rds_files)
 
 ## ---Iterate over combinations of region, band, aspect-----------------------
 t0 <- Sys.time()
@@ -77,8 +84,8 @@ for (i in seq_len(nrow(mp_df))) {
     file_names_sub <- file_names[k_files]
     smet_names_sub <- smet_names[k_files]
     file_ids_sub <- file_ids[k_files]
-
-    if (length(file_names_sub) >= 3) {
+    
+    if (length(file_names_sub) >= 2) {
       ##  Extract timezone from SMET Header
       tz  <- sapply(smet_names_sub, function(fn) {
         readSmet(fn, HeaderOnly = TRUE)$tz
@@ -88,14 +95,26 @@ for (i in seq_len(nrow(mp_df))) {
       tz_string <- ifelse(tz_unique >= 0, paste0("Etc/GMT-", tz_unique), paste0("Etc/GMT+", abs(tz_unique)))
       ##  Generate relevant datetime period to aggregate
       #   based on first file dates and by assuming all .pro files have the same dates
-      dtopera <- as.Date(config$Forecast$DATE_OPERA)
-      dailytime_parts <- strsplit(config$Aggregate$DAILY_TIME, ":")[[1]]
+      dtopera <- as.Date(config$Forecast$date_opera)
+      dailytime_parts <- strsplit(config$Aggregate$daily_time, ":")[[1]]
       hours <- as.numeric(dailytime_parts[1])
       minutes <- as.numeric(dailytime_parts[2])
-      fdatetime_max <- max(scanProfileDates(file_names_sub[1], tz = tz_string))
-      dtmax <- min(fdatetime_max, as.POSIXct(format(as.Date(config$Forecast$SEASON_END), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
-      dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
-      dtperiod <- seq(dtopera, dtmax, by = "day")
+      fdatetime <- scanProfileDates(file_names_sub[1], tz = tz_string)
+      dtmax <- min(max(fdatetime), as.POSIXct(format(as.Date(config$Forecast$season_end), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
+      if (config$Aggregate$initialize_from == 'date_opera') {
+        dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
+        dtperiod <- seq(dtopera, dtmax, by = "day")
+      } else if (config$Aggregate$initialize_from == 'season_start') {
+        dt_season_start = as.POSIXct(format(as.Date(config$Forecast$season_start), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
+        if (min(fdatetime) > dt_season_start) {
+          dtmin <- dt_season_start + 86400  # adding one day in seconds
+        } else {
+          dtmin <- dt_season_start
+        }
+        dtperiod <- seq(dtmin, dtmax, by = "day")
+      } else {
+        stop("config$Aggregate$initialize_from must be one of ['season_start', 'date_opera']")
+      }
 
       
       ##  ---Read profiles----------------------------------------------------
@@ -110,50 +129,49 @@ for (i in seq_len(nrow(mp_df))) {
                    mp_df[i, "band"], " ", mp_df[i, "aspect"], "\n"))
         quit(save = "no", status = 0)
       }
+      wxlist = lapply(smet_names_sub, readSmet)
       ## routine requires unique station names per station:
       sm <- summary(profileset)
-      if (length(unique(sm$station_id)) == 1) {
-        # check when elev changes or when date jumps back into past
-        sm$change <- c(0, diff(sm$elev) != 0 | diff(sm$date) < 0)
-        # hack a station_id to satisfy checks in aggregating function
-        sm$station_id <- cumsum(sm$change)
-        ## The hack should actually do just fine. Anyway, include check and messaging in case of weird results:
-        if (length(unique(sm$station_id)) != length(file_names_sub)) {
-          cat(paste0(
-            "[w] (", worker, ") No StationName with unique station_id present in .pro file(s)!",
-            " This might lead to unexpected errors/bugs. Update your .pro files. \n"
-          ))
-          cat(paste0(
-            "[w] (", worker, ") ", length(file_names_sub), " different profiles available,",
-            " but I had to create ", length(unique(sm$station_id)), " different profile_ids \n"
-          ))
-          ## check whether higher frequency than daily smpling:
-          # tmp <- lapply(sm$station_id, function(sid) {
-          #   which(duplicated(sm$date[sm$station_id == sid]))
-          # })
-          # any(unlist(tmp))
-        }
+      # check when elev changes or when date jumps back into past or when station_id changes
+      sm$change <- c(0, diff(sm$elev) != 0 | diff(sm$date) < 0 | !str_detect(sm$station[-1], sm$station[-length(sm$station)]))
+      # hack a station_id to satisfy checks in aggregating function
+      sm$profile_number <- 1 + cumsum(sm$change)
+      sm$station_id <- sm$profile_number
+      ## The hack should actually do just fine. Anyway, include check and messaging in case of weird results:
+      if (length(unique(sm$station_id)) != length(file_names_sub)) {
+        cat(paste0(
+          "[w] (", worker, ") No StationName with unique station_id present in .pro file(s)!",
+          " This might lead to unexpected errors/bugs. Update your .pro files. \n"
+        ))
+        cat(paste0(
+          "[w] (", worker, ") ", length(file_names_sub), " different profiles available,",
+          " but I had to create ", length(unique(sm$station_id)), " different profile_ids \n"
+        ))
+        ## check whether higher frequency than daily smpling:
+        # tmp <- lapply(sm$station_id, function(sid) {
+        #   which(duplicated(sm$date[sm$station_id == sid]))
+        # })
+        # any(unlist(tmp))
+      }
+      ## write ski_pen into profile meta summary:
+      sm$ski_pen = NA
+      for (smi in seq(nrow(sm))) {
+        sm$ski_pen[smi] = wxlist[[sm$profile_number[smi]]]$data$ski_pen[wxlist[[sm$profile_number[smi]]]$data$timestamp %in% sm$datetime[smi]]
       }
 
       
       ## ---Preprocess profiles-----------------------------------------------
       profileset <- computeRTA(profileset)
-      # profileset <- computePunstable(profileset)  # verify unit of ski pen!
-      ## Create random ski_pen to test entire framework until ski_pen issue resolved
-      warning("Random ski_pen used for testing purposes")
-      cat(paste0("[W] (", worker, ") Random ski_pen used for testing purposes \n"))
-      profileset <- computePunstable(profileset, ski_pen = rep(0.2, length(profileset)))
+      profileset <- computePunstable(profileset, ski_pen = sm$ski_pen)
       profileset <- snowprofileSet(lapply(profileset, function(sp) {
         labelPWL(sp, pwl_gtype = c("SH", "DH", "FCxr", "FC"), threshold_gtype = c("FC", "FCxr"), threshold_RTA = 0.8)
       }))
 
       ## ---Do aggregation----------------------------------------------------
       ## Load existing aggregate profile from file if available
-      rds_files <- list.files(path = config$Paths$`_aggregates_output_dir`, pattern = "\\.rds$", full.names = TRUE)
-      rds_names <- basename(rds_files)
       k_rds <- which(grepl(paste(mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"], sep = "_"), rds_names))
       init <- TRUE
-      if (length(k_rds) == 1) {
+      if (length(k_rds) == 1 & config$Aggregate$initialize_from != 'season_start') {
         avg1 <- readRDS(rds_files[k_rds])
         if ((as.Date(dtopera) > min(avg1$meta$date))
              & (as.Date(dtopera) <= max(avg1$meta$date)+1)) {
@@ -172,7 +190,7 @@ for (i in seq_len(nrow(mp_df))) {
                                        progressbar = FALSE, verbose = FALSE,
                                        keep.profiles = config$Advanced$keepprofiles,
                                        dims = config$Advanced$dims, weights = config$Advanced$weights,
-                                       simType = tolower(config$Advanced$SIMTYPE))
+                                       simType = tolower(config$Advanced$sim_type))
           avg <- concat_avgSP_timeseries(avg1, avg2)
         } else {
           init <- TRUE
@@ -187,16 +205,16 @@ for (i in seq_len(nrow(mp_df))) {
                                     progressbar = FALSE, verbose = FALSE,
                                     keep.profiles = config$Advanced$keepprofiles,
                                     dims = config$Advanced$dims, weights = config$Advanced$weights,
-                                    simType = tolower(config$Advanced$SIMTYPE))
+                                    simType = tolower(config$Advanced$sim_type))
       }
 
-      if (sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
+      if (sum(avg$meta$reinitialized) > 1 & sum(avg$meta$reinitialized) > 0.2*nrow(avg$meta)) {
         cat(paste0("[w] (", worker, ") More than 20% of average profiles were re-initialized for ", 
                     mp_df[i, "region_id"], " ", mp_df[i, "band"], " ", mp_df[i, "aspect"], 
                     " --Consider investigating! \n"))
       }
       ## Save to file
-      if (config$Aggregate$SAVEAS_rds) {
+      if (config$Aggregate$saveas_rds) {
         saveRDS(avg, paste0(
           config$Paths$`_aggregates_output_dir`,
           "/", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], ".rds"
@@ -209,14 +227,14 @@ for (i in seq_len(nrow(mp_df))) {
 
       ## ---hand hardness profile-----------------------------------------------
       ## single hand hardness profile with instability distributions
-      if (config$Aggregate$PLOT_HandHardness) {
-        for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$Forecast$DATE_OPERA) &
-                                    avg$meta$date < as.Date(config$Forecast$DATE_OPERA) + as.double(config$Aggregate$PLOT_Leadtime_days_HandHardness)]) {
-          leadtime <- as.numeric(as.Date(pdate) - as.Date(config$Forecast$DATE_OPERA)) # (days)
+      if (config$Aggregate$plot_handhardness) {
+        for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$Forecast$date_opera) &
+                                    avg$meta$date < as.Date(config$Forecast$date_opera) + as.double(config$Aggregate$plot_leadtime_days_handhardness)]) {
+          leadtime <- as.numeric(as.Date(pdate) - as.Date(config$Forecast$date_opera)) # (days)
           fname <- paste0(
             config$Paths$`_aggregates_figures_dir`, "/",
             "hhp_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-            format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+            format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
           )
           png(filename = fname, width = 800, height = 700)
           par(cex.lab = 1.65, cex.axis = 1.8, bg = "white")
@@ -226,13 +244,13 @@ for (i in seq_len(nrow(mp_df))) {
       }
       
       ## ---avg timeseries-----------------------------------------------------
-      if (config$Aggregate$PLOT_TSplain) {
+      if (config$Aggregate$plot_tsplain) {
         pdate <- max(avg$meta$date)
-        leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+        leadtime <- as.numeric(pdate - as.Date(config$Forecast$date_opera)) # (days)
         fname <- paste0(
           config$Paths$`_aggregates_figures_dir`, "/",
           "tsplain_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-          format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+          format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
         )
         png(filename = fname, width = 1200, height = 600)
         par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
@@ -241,13 +259,13 @@ for (i in seq_len(nrow(mp_df))) {
       }
 
       ## ---avg timeseries w/ stability overplot-------------------------------
-      if (config$Aggregate$PLOT_TSstability) {
+      if (config$Aggregate$plot_tsstability) {
         pdate <- max(avg$meta$date)
-        leadtime <- as.numeric(pdate - as.Date(config$Forecast$DATE_OPERA)) # (days)
+        leadtime <- as.numeric(pdate - as.Date(config$Forecast$date_opera)) # (days)
         fname <- paste0(
           config$Paths$`_aggregates_figures_dir`, "/",
           "tsstab_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-          format(as.Date(config$Forecast$DATE_OPERA), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+          format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
         )
         png(filename = fname, width = 1200, height = 600)
         par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
@@ -256,7 +274,7 @@ for (i in seq_len(nrow(mp_df))) {
       }
 
     } else {
-      cat(paste0("[i] (", worker, ") Not aggregating b/c less than three profiles for ", mp_df[i, "region_id"], " ",
+      cat(paste0("[i] (", worker, ") Not aggregating b/c less than two profiles for ", mp_df[i, "region_id"], " ",
                  mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
     }
   }, error = function(e) {
@@ -270,6 +288,6 @@ for (i in seq_len(nrow(mp_df))) {
   }
 }  # END for loop
 
-if (config$Aggregate$DEBUG_MODE) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - t0, 1)), "\n"))
+if (config$Aggregate$debug_mode) cat(paste0("[i] (", worker, ") took ", format(round(Sys.time() - t0, 1)), "\n"))
 
 quit(save = "no", status = errorcode)
