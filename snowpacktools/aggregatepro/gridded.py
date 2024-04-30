@@ -263,6 +263,8 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
     """
 
     df = pd.read_csv(config.get('Paths', '_aggregates_vstations_csv_file'))
+    if 'error' in df.columns:
+        df = df.loc[df['error'].isin([0]), ]
 
     """Generate new vstations_csv in case a group_regions_geojson is provided"""
     if group_regions_geojson:
