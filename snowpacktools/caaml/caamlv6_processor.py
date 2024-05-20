@@ -123,8 +123,8 @@ def add_snp_metadata(tree: object):
     return tree
 
 
-def add_monti_density(file, new_file):
-    '''
+def validate_and_prepare_for_snp(file, new_file):
+    """
     Adds density profile based on grain shape and hardness parameterization alla Monti (2014)
 
     Arguments:
@@ -135,7 +135,8 @@ def add_monti_density(file, new_file):
 
     Comments:
         - If density exists from observation or simulation it is removed
-    '''
+    """
+
     try:
         tree = et.parse(file)
     except:
@@ -175,7 +176,7 @@ def add_monti_density(file, new_file):
     # print(temp_vals)
 
 
-    """Add density layer for each stratigraphy layer"""
+    """Add density layer for each stratigraphy layer (and check for valid grain size)"""
     child_stratProfile = child_SnowProfileMeasurements.find(caaml_ns + 'stratProfile')
     for layer in child_stratProfile.iter(caaml_ns + 'Layer'):
         
@@ -207,7 +208,7 @@ def add_monti_density(file, new_file):
             val_hardness.text = check_handHardness(val_hardness.text)
             handhardness      = val_hardness.text
         
-        child_density.text = str(_monti_density(grainFormPrimary, grainFormSecondary, handhardness))
+        child_density.text = str(monti_density(grainFormPrimary, grainFormSecondary, handhardness))
 
         """Check LWC/wetness (only full values are allowed)"""
         for val_wetness in layer.iter(caaml_ns + 'wetness'):
@@ -224,7 +225,7 @@ def add_monti_density(file, new_file):
     tree.write(new_file,encoding='UTF-8', method="xml", doctype='<?xml version="1.0" encoding="UTF-8"?>')
 
 
-def _monti_density(form, form2, hardness_str):
+def monti_density(form, form2, hardness_str):
     """Density parameterisation from Monti 2014"""
 
     """
