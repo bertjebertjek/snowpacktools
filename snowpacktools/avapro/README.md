@@ -26,3 +26,13 @@ In addition to setting up the relevant paths at the top of the ini-file, there a
 <p float="center">
   <img src="./figures/snowprofile18284_sk38.png" width="85%" />
 </p>
+
+Relevant references
+
+Monti, F., & Schweizer, J. (2013). A relative difference approach to detect potential weak layers within a snow profile. In Proceedings ISSW (pp. 339-343).
+
+Mayer, S., van Herwijnen, A., Techel, F., and Schweizer, J. (2022). A random forest model to assess snow instability from simulated snow stratigraphy, The Cryosphere, 16, 4593–4615, https://doi.org/10.5194/tc-16-4593-2022.
+
+Herla, Florian & Horton, Simon & Mair, Patrick & Haegeli, Pascal. (2020). Snow profile alignment and similarity assessment for aggregating, clustering, and evaluating of snowpack model output for avalanche forecasting. 10.5194/gmd-2020-171.
+
+Reuter, B., Viallon-Galinier, L., Horton, S., van Herwijnen, A., Mayer, S., Hagenmuller, P., & Morin, S. (2022). Characterizing snow instability with avalanche problem types derived from snow cover simulations. Cold Regions Science and Technology, 194, 103462 (17 pp.). https://doi.org/10.1016/j.coldregions.2021.103462

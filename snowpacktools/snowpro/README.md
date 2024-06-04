@@ -5,7 +5,7 @@
 Snowpro also includes Stephanie Mayer's Punstbale random forest model. The instability index is calculated by stacking all timestamps. It makes the computation quite fast. This happens in 'instability_rfm_mayer.py'.
 
 ## Pro-parser
-The default pro-parser currently returns a dictionary of dictionaries with keys representing different timestamps and the nested dictionaries represent the individual snow profiles with keys for different variables and values being the arrays covering all the layers of the snow profile. Check out the function read_pro() in 'snowpro.py'.
+The default pro-parser currently returns a dictionary of dictionaries with keys representing different timestamps and the nested dictionaries represent the individual snow profiles with keys for different variables and values being the arrays covering all the layers of the snow profile. Check out the function read_pro() in 'snowpro.py'. It was originally based on Bettina Richter's pro-parser used at SLF. 
 
 For Avapro there's also a pandas version (read_pro_pd()). Its slower, but a list of dataframes makes postprocessing of the data quite intuitive and within notebooks Pandas dataframes are quite nice to look at and work with. Lists (can be sorted) might also be helpful to visualize different profiles sorted by height not time (like in Horton paper). Avapro is currently updated to work with the dictionary version of Snowpro.
 
@@ -58,3 +58,7 @@ Some example visualizations:
 <p float="center">
   <img src="./figures/snp-evo-Ottenspitze_28_sk38.png" width="85%" />
 </p>
+
+## Relevant references
+
+Mayer, S., van Herwijnen, A., Techel, F., and Schweizer, J. (2022). A random forest model to assess snow instability from simulated snow stratigraphy, The Cryosphere, 16, 4593–4615, https://doi.org/10.5194/tc-16-4593-2022.

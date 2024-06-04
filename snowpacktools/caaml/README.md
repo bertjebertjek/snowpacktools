@@ -9,3 +9,7 @@ Typically, under operational avalanche forecasting constraints, density is not d
 <p float="center">
   <img src="./figures/density_param.png" width="85%" />
 </p>
+
+## Relevant references
+
+Monti, Fabiano & Schweizer, Juerg & Fierz, Charles. (2014). Hardness estimation and weak layer detection in simulated snow stratigraphy. Cold Regions Science and Technology. 103. 10.1016/j.coldregions.2014.03.009.
