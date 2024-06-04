@@ -31,9 +31,12 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
     
     Arguments:
         path (str):             String pointing to the location of the .PRO file to be read
+        res (str):              temporal resolution
+        keep_soil (bool):       Decide if soil layers are kept
+        consider_surface_hoar (bool):   Decide if surface hoar should be added as another layer
     Returns:
-        snowpro_list (list):    List of dfs with each df representing one snow profile (one timestamp), column=layer, row=variables
-        meta_dict:              Dictionary with metadata of snow profile
+        profs (dict):           Dictionary with timestamps as keys and values being another dictionary with profile parameters
+        meta_dict (dict):       Dictionary with metadata of snow profile
     """
 
     w, hours = pro_helper.set_resolution(res)
