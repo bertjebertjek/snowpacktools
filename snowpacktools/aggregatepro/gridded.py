@@ -232,12 +232,13 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
         os.remove(config.get('Paths','_aggregates_groupings_csv') + str(i) + ".csv")
     if config.getboolean('cleanup', 'dotinput'):
         os.rmdir("./input")
-    if config.getboolean('cleanup', '_aggregates_vstations_csv_file'):
-        os.remove(config.get('Paths', '_aggregates_vstations_csv_file'))
-        if config.get('Paths', '_aggregates_vstations_csv_file').endswith('.full'):
-            config['Paths']['_aggregates_vstations_csv_file'] = config.get('Paths', '_aggregates_vstations_csv_file')[:-5]
-            with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
-                config.write(cfgfile)
+    if '_aggregates_vstations_csv_file' in config.options('cleanup'):
+        if config.getboolean('cleanup', '_aggregates_vstations_csv_file'):
+            os.remove(config.get('Paths', '_aggregates_vstations_csv_file'))
+            if config.get('Paths', '_aggregates_vstations_csv_file').endswith('.full'):
+                config['Paths']['_aggregates_vstations_csv_file'] = config.get('Paths', '_aggregates_vstations_csv_file')[:-5]
+                with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
+                    config.write(cfgfile)
 
 
 def determine_groupings(config, group_regions_geojson, region_ids, aspects, bands):
@@ -267,7 +268,14 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
         gdf = gpd.sjoin(gdf, polygons, how='inner', predicate='within')
         gdf['region_id'] = gdf['id']
         df = gdf[['vstation', 'easting', 'northing', 'lon', 'lat', 'elev', 'band', 'region_id']]
-        config['Paths']['_aggregates_vstations_csv_file'] = os.path.splitext(config.get('Paths', '_aggregates_vstations_csv_file'))[0] + '-ext.csv'
+        # handle file extensions (`-ext` for external groupings, `.csv` default file extension, `.full` for aspect-laden files, e.g.:
+        #                         /path/to/basename-ext.csv.full)
+        root_vstationsfile, ext_vstationsfile = os.path.splitext(config.get('Paths', '_aggregates_vstations_csv_file'))
+        if ext_vstationsfile == '.full':
+            root_vstationsfile, ext_prev_vstationsfile = os.path.splitext(root_vstationsfile)
+            ext_vstationsfile = ext_prev_vstationsfile + ext_vstationsfile
+        if not root_vstationsfile[-4:] == '-ext':
+            config['Paths']['_aggregates_vstations_csv_file'] = root_vstationsfile + '-ext' + ext_vstationsfile
         with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
             config.write(cfgfile)
         df.to_csv(config.get('Paths', '_aggregates_vstations_csv_file'), index=False)
@@ -358,11 +366,7 @@ def setup(configfile, domain=''):
         domain = config.get('General', 'domain')
     domain_appendix = "-" + domain
     
-    ## The following ones could be made accessible to user config for more flexible control?!
-    config['Paths']['_aggregates_output_dir'] = "./output/aggregates" + domain_appendix
-    config['Paths']['_aggregates_figures_dir'] = "./output/aggregates-figs" + domain_appendix
-    
-    ## The following ones need no changing
+    ## The following settings need no changing
     config['Paths']['_aggregates_groupings_csv']         = f'./input/aggregates_groupings/{domain}-'  # do not modify!
     config['Paths']['_aggregates_rscript_path'] = pkg_resources.resource_filename('snowpacktools', 
                                                                                   'aggregatepro/aggregate_gridded_forecasts.R')
@@ -370,6 +374,15 @@ def setup(configfile, domain=''):
                                                                                    'aggregatepro/plotters.R')
     config['Paths']['_ini_runtime_domain'] = configfile  # already set in the context of 'awsome', but not for outside standalone use
 
+    if config.get('Paths', '_aggregates_output_basedir') == '_output_dir':
+        try:
+            config['Paths']['_aggregates_output_basedir'] = config.get('Paths', '_output_dir')
+        except KeyError:
+            config['Paths']['_aggregates_output_basedir'] = "./output"
+
+    config['Paths']['_aggregates_output_dir'] = config['Paths']['_aggregates_output_basedir'] + "/aggregates" + domain_appendix
+    config['Paths']['_aggregates_figures_dir'] = config['Paths']['_aggregates_output_basedir'] + "/aggregates-figs" + domain_appendix
+    
     if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file_runtime':
         config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file_runtime']
     if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_output_dir':
