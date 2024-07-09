@@ -242,7 +242,7 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
         os.rmdir("./input")
     if config.getboolean('cleanup', '_aggregates_vstations_csv_file'):
         os.remove(config.get('Paths', '_aggregates_vstations_csv_file'))
-        if config.get('Paths', '_aggregates_vstations_csv_file').endswith('.temp'):
+        if config.get('Paths', '_aggregates_vstations_csv_file').endswith('.full'):
             config['Paths']['_aggregates_vstations_csv_file'] = config.get('Paths', '_aggregates_vstations_csv_file')[:-5]
             with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
                 config.write(cfgfile)
