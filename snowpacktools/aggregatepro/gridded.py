@@ -46,7 +46,7 @@ Examples:
     >>> gag.aggregate(config)
 
   2. AWSOME use with existing domain
-    >>> gag.aggregate(domain)
+    >>> gag.aggregate(domain='domain')
 
   3. Custom polygons that overwrite regions in vstations-csv
     >>> gag.aggregate(config, group_regions_geojson='custom_polygons.geojson')
@@ -370,8 +370,8 @@ def setup(configfile, domain=''):
                                                                                    'aggregatepro/plotters.R')
     config['Paths']['_ini_runtime_domain'] = configfile  # already set in the context of 'awsome', but not for outside standalone use
 
-    if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file':
-        config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file']
+    if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file_runtime':
+        config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file_runtime']
     if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_output_dir':
         config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_output_dir']
 
