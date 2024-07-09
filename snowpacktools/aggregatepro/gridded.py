@@ -1,25 +1,3 @@
-################################################################################
-# Copyright 2024 Avalanche Warning Services Tyrol and Norway                   #
-################################################################################
-# This is free software you can redistribute/modify under the terms of the     #
-# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
-################################################################################
-
-import os
-import sys
-import configparser
-import subprocess
-import multiprocessing
-import pkg_resources
-import shapely
-
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-
-from datetime import datetime
-
-
 """
 This module is designed to aggregate simulated snow profiles for avalanche forecasting purposes.
 It processes datasets of gridded snowpack simulations stored in .pro and .smet files and supports operations
@@ -104,7 +82,7 @@ The module will write files to `./input` and `./output` and also create the dire
 
 License:
 --------
-Distributed under the GNU Lesser General Public License v3.0 or later. See http://www.gnu.org/licenses/lgpl-3.0.html for more information.
+Distributed under the AGPLv3 license.
 
 Authors:
 --------
@@ -122,6 +100,20 @@ Potential Future Improvements:
        Either the underlying aggregation routine needs to be redesigned to allow for backtracking of layers to the original `.pro` files, 
        or the disk space needs to be available (at least for the current season).
 """
+
+import os
+import sys
+import configparser
+import subprocess
+import multiprocessing
+import pkg_resources
+import shapely
+
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+
+from datetime import datetime
 
 
 def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=None, aspects=None, bands=None):
