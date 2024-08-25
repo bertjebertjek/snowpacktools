@@ -13,10 +13,16 @@ import os
 import time
 import joblib
 import numpy as np
+import pdb
 
 
-def calc_punstable(profs):
-    """Calculate Mayer's Punstable and relevant variables and add it to profiles"""
+def calc_punstable(profs, timestamps=None, verbose=True):
+    """Calculate Mayer's Punstable and relevant variables and add it to profiles
+    
+    Parameters:
+        profs (dict): profiles
+        timestamps (list[datetime.datetime], optional): compute punstable only for those timesteps. If None, compute it for all profiles.
+    """
 
     """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
     model = joblib.load(os.path.join("/".join(__file__.split("/")[:-1]), "models", "RF_instability_model.sav"))
@@ -31,7 +37,9 @@ def calc_punstable(profs):
     features = np.empty((0,len(feature_list),))
     iprofs   = []
 
-    for ts in profs:
+    if timestamps is None:
+        timestamps = profs.keys()
+    for ts in timestamps:
         prof = profs[ts]
 
         """Get features for RF model and stack"""
@@ -45,7 +53,8 @@ def calc_punstable(profs):
 
         features = np.concatenate([features, df_features_prof], axis=0)
 
-    print('[i]  Stacking features for Punstable RF-model (Mayer et al., 2022): {}s'.format(time.time()-start_process))
+    if verbose:
+        print('[i]  Stacking features for Punstable RF-model (Mayer et al., 2022): {}s'.format(time.time()-start_process))
     # print('Number of timestamps: ', len(list(profs)))
     # print('Number of indices:    ', len(iprofs))
 
@@ -58,12 +67,14 @@ def calc_punstable(profs):
     
     ## compute p_unstable for all rows except the ones that contain any NA values:
     feature_mask = ~np.isnan(features).any(axis = 1)
-    Punstable[feature_mask] = model.predict_proba(features[feature_mask])[:,0]
+    if feature_mask.sum() > 0:
+        Punstable[feature_mask] = model.predict_proba(features[feature_mask])[:,0]
 
-    print('[i]  RF-model prediction: {}s'.format(time.time()-start_process))
+    if verbose:
+        print('[i]  RF-model prediction: {}s'.format(time.time()-start_process))
     
     i0 = 0
-    for i,ts in enumerate(profs):
+    for i,ts in enumerate(timestamps):
         i1 = i0+iprofs[i]
         #profs[ts]['Punstable'] = df_features['Punstable'][i0:i1].values
         profs[ts]['Punstable'] = Punstable[i0:i1]

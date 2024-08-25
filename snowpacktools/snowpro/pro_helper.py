@@ -22,6 +22,7 @@ def get_pro_code_dict():
                     "0502": "density",                          # element density (kg m-3)
                     "0503": "temperature",                      # element temperature (degC)
                     "0504": "element ID (1)",
+                    "0505": "element deposition date (ISO)",    # or "element age (days)" --> see ini key PROF_AGE_OR_DATE
                     "0506": "lwc",                              # liquid water content by volume (%)
                     "0508": "dendricity (1)",
                     "0509": "sphericity (1)",
@@ -55,7 +56,7 @@ def get_pro_code_dict():
 
 
     """Set up list of variabels of interest"""
-    var_codes =['0501','0502','0503','0506','0508','0523',
+    var_codes =['0501','0502','0503','0505','0506','0508','0523',
                 '0509','0511','0512','0513','0515','0516',
                 '0521','0535','0517','0532','0533','0534',
                 '0601','0514','0604','0606']
