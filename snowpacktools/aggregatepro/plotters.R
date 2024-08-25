@@ -100,7 +100,9 @@ plotTSplainAvgProfile <- function(avgSP) {
     lines(avgSP$meta$date, avgSP$meta$hs_median-avgSP$meta$thicknessPPDF_median, lwd = 2, lty = "dashed")
     mtext("Height (cm)", side = 2, line = 4, cex = opar$cex.lab)
     # mtext("Aggregated and predominant snowpack conditions", side = 3, line = 1, cex = opar$cex.lab)
-    axis(2, at = pretty(c(0, max(avgSP$meta$hs))), las = 1)
+    yaxisticks <- pretty(c(0, max(avgSP$meta$hs)))
+    axis(2, at = yaxisticks, las = 1)
+    abline(h = yaxisticks, lty = "dotted", col = 'gray70')
     legend("topleft",
         c("<HS>", "<PP/DF>", "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr"),
         lty = c("solid", "dashed", rep(NA, 9)), lwd = 2,
@@ -131,7 +133,9 @@ plotTSstabilityAvgProfile <- function(avgSP) {
     lines(avgSP$meta$date, avgSP$meta$hs_median - avgSP$meta$thicknessPPDF_median, lwd = 2, lty = "dashed")
     mtext("Height (cm)", side = 2, line = 4, cex = opar$cex.lab)
     # mtext("Aggregated and predominant snowpack conditions", side = 3, line = 1, cex = opar$cex.lab)
-    axis(2, at = pretty(c(0, max(avgSP$meta$hs))), las = 1)
+    yaxisticks <- pretty(c(0, max(avgSP$meta$hs)))
+    axis(2, at = yaxisticks, las = 1)
+    abline(h = yaxisticks, lty = "dotted", col = 'gray70')
     legend("topleft",
         c("<HS>", "<PP/DF>", "SH", "DH", "FC", "FCxr", "RG", "PP", "DF", "MF", "MFcr"),
         lty = c("solid", "dashed", rep(NA, 9)), lwd = 2,
@@ -159,7 +163,7 @@ plotTSstabilityAvgProfile <- function(avgSP) {
     }
 
     # Add labels to the colorbar
-    axis(4, at = seq(0, 1 * diff(par("usr")[3:4]), by = 0.25 * diff(par("usr")[3:4])), labels = seq(0, 1, by = 0.25))
+    axis(4, at = seq(0, 1 * diff(par("usr")[3:4]), by = 0.25 * diff(par("usr")[3:4])), labels = seq(0, 1, by = 0.25), las = 1)
     mtext("Percentage of unstable grid points", side = 4, line = 2)
 
 }

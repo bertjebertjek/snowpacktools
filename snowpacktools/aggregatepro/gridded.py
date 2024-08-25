@@ -115,6 +115,8 @@ import geopandas as gpd
 
 from datetime import datetime
 
+import pdb
+
 
 def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=None, aspects=None, bands=None):
     """
@@ -138,7 +140,7 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
     group_regions_geojson : str, optional
         Path to a GeoJSON file defining custom polygons for which the aggregation should be performed.
         If provided, this overrides the regions specified in the vstations-csv file. Each polygon feature
-        needs an `id` property.
+        needs an `id` property. Ideally, the CRS is specified in the geojson, will be converted to WGS84.
     region_ids : list of int or str, optional
         Specific region IDs to limit the aggregation to certain geographic regions. Those are either the
         IDs from the vstation-csv file or from the GeoJSON.
@@ -197,7 +199,6 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
     df_unique_grouping = determine_groupings(config, group_regions_geojson, region_ids, aspects, bands)
     df_unique_grouping.sort_values(['region_id', 'band', 'aspect']).to_csv(config.get('Paths','_aggregates_groupings_csv') + "summary.csv", index=False)
 
-
     """set parallel processing context"""
     print(f"[i]  Running aggregation script on {config.getint('General','ncpus')} CPUs.\n\n")
     config['Aggregate']['ntasks'] = str(min(df_unique_grouping.shape[0], config.getint('General', 'ntasks')))
@@ -232,11 +233,11 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
         os.remove(config.get('Paths','_aggregates_groupings_csv') + str(i) + ".csv")
     if config.getboolean('cleanup', 'dotinput'):
         os.rmdir("./input")
-    if '_aggregates_vstations_csv_file' in config.options('cleanup'):
-        if config.getboolean('cleanup', '_aggregates_vstations_csv_file'):
-            os.remove(config.get('Paths', '_aggregates_vstations_csv_file'))
-            if config.get('Paths', '_aggregates_vstations_csv_file').endswith('.full'):
-                config['Paths']['_aggregates_vstations_csv_file'] = config.get('Paths', '_aggregates_vstations_csv_file')[:-5]
+    if '_aggregates_vstations_csv_file_processed' in config.options('cleanup'):
+        if config.getboolean('cleanup', '_aggregates_vstations_csv_file_processed'):
+            os.remove(config.get('Paths', '_aggregates_vstations_csv_file_processed'))
+            if config.get('Paths', '_aggregates_vstations_csv_file_processed').endswith('.full'):
+                config['Paths']['_aggregates_vstations_csv_file_processed'] = config.get('Paths', '_aggregates_vstations_csv_file_processed')[:-5]
                 with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
                     config.write(cfgfile)
 
@@ -255,9 +256,7 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
         DataFrame with unique combinations of region, band, and aspect to be aggregated.
     """
 
-    df = pd.read_csv(config.get('Paths', '_aggregates_vstations_csv_file'))
-    if 'error' in df.columns:
-        df = df.loc[df['error'].isin([0]), ]
+    df = pd.read_csv(config.get('Paths', '_aggregates_vstations_csv_file_processed'))
 
     """Generate new vstations_csv in case a group_regions_geojson is provided"""
     if group_regions_geojson:
@@ -267,18 +266,15 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
         polygons = polygons.to_crs(epsg=4326)
         gdf = gpd.sjoin(gdf, polygons, how='inner', predicate='within')
         gdf['region_id'] = gdf['id']
-        df = gdf[['vstation', 'easting', 'northing', 'lon', 'lat', 'elev', 'band', 'region_id']]
+        df = gdf[[col for col in ['vstation', 'easting', 'northing', 'lon', 'lat', 'elev', 'band', 'region_id', 'error'] if col in gdf.columns]]
         # handle file extensions (`-ext` for external groupings, `.csv` default file extension, `.full` for aspect-laden files, e.g.:
         #                         /path/to/basename-ext.csv.full)
-        root_vstationsfile, ext_vstationsfile = os.path.splitext(config.get('Paths', '_aggregates_vstations_csv_file'))
+        root_vstationsfile, ext_vstationsfile = os.path.splitext(config.get('Paths', '_aggregates_vstations_csv_file_processed'))
         if ext_vstationsfile == '.full':
             root_vstationsfile, ext_prev_vstationsfile = os.path.splitext(root_vstationsfile)
             ext_vstationsfile = ext_prev_vstationsfile + ext_vstationsfile
         if not root_vstationsfile[-4:] == '-ext':
-            config['Paths']['_aggregates_vstations_csv_file'] = root_vstationsfile + '-ext' + ext_vstationsfile
-        with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
-            config.write(cfgfile)
-        df.to_csv(config.get('Paths', '_aggregates_vstations_csv_file'), index=False)
+            config['Paths']['_aggregates_vstations_csv_file_processed'] = root_vstationsfile + '-ext' + ext_vstationsfile
 
     """Extend DataFrame with aspect info if not present"""
     if 'aspect' not in df.columns:
@@ -296,13 +292,18 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
             df['vstation'] += aspect_suffix.astype(str)
             df['aspect'] = df['vstation'].str[-1].map(aspect_map)
 
-            config['Paths']['_aggregates_vstations_csv_file'] = config.get('Paths', '_aggregates_vstations_csv_file') + '.full'
-            with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
-                config.write(cfgfile)
-            df.to_csv(config.get('Paths', '_aggregates_vstations_csv_file'), index=False)
-            # config['cleanup']['_aggregates_vstations_csv_file'] = 'True'
+            config['Paths']['_aggregates_vstations_csv_file_processed'] = config.get('Paths', '_aggregates_vstations_csv_file_processed') + '.full'
+            config['cleanup']['_aggregates_vstations_csv_file_processed'] = 'True'
         else:
             raise NotImplementedError("Nslopes other than 5 are not implemented yet.")
+        
+    if 'error' in df.columns:
+        df_err = df.loc[df['error'] > 0, ].copy()
+        df = df.loc[df['error'].isin([0]), ].copy()
+
+    with open(config.get('Paths', '_ini_runtime_domain'), "w") as cfgfile:
+            config.write(cfgfile)
+    df.to_csv(config.get('Paths', '_aggregates_vstations_csv_file_processed'), index=False)
 
     """Filter region_ids, bands, aspects"""
     if region_ids:
@@ -319,6 +320,10 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
     ## arrange the data frame in a way that alternates combinations with few and many stations, 
     ## so that resulting workers have roughly the same amount of work
     station_counts = df.groupby(['region_id', 'band', 'aspect'])['vstation'].nunique().reset_index(name='nstations')
+    if 'df_err' in locals():
+        err_stations= df_err.groupby(['region_id', 'band', 'aspect'])['error'].sum().reset_index(name='excl_nstations_err')
+        station_counts = pd.merge(station_counts, err_stations, on=['region_id', 'band', 'aspect'], how='left')
+        station_counts['excl_nstations_err'] = station_counts['excl_nstations_err'].fillna(0).astype(int)
     dfuni = pd.merge(dfuni, station_counts, on=['region_id', 'band', 'aspect'], how='left')
     dfuni = dfuni.sort_values(by='nstations').reset_index(drop=True)
     dfuni = dfuni.astype(str)
@@ -385,6 +390,7 @@ def setup(configfile, domain=''):
     
     if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file_runtime':
         config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file_runtime']
+    config['Paths']['_aggregates_vstations_csv_file_processed'] = config['Paths']['_aggregates_vstations_csv_file']
     if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_output_dir':
         config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_output_dir']
 
