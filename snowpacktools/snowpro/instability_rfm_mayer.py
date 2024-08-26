@@ -119,7 +119,12 @@ def comp_features(prof, slopeangle):
     # 6. mean of slab density divided by slab grain size <rho/gs>_{slab}
     thick      = np.diff(np.concatenate((np.array([0]), layer_top)))
     rhogs      = rho*thick/gs
-    slab_rhogs = np.append(np.flip(np.cumsum(rhogs[::-1])/np.cumsum(thick[::-1]))[1:len(rho)],np.nan)
+    if np.isnan(rhogs[-1]) and prof['graintype'][-1][0] == 'SH':
+        rhogs      = rho[:-1]*thick[:-1]/gs[:-1]
+        thick_mod = thick[:-1]
+        slab_rhogs = np.append(np.flip(np.cumsum(rhogs[::-1])/np.cumsum(thick_mod[::-1]))[1:len(rho)-1],[np.nan, np.nan])
+    else:
+        slab_rhogs = np.append(np.flip(np.cumsum(rhogs[::-1])/np.cumsum(thick[::-1]))[1:len(rho)],np.nan)
 
     # Put all features together into one dataframe / dictionary?
     # d = {'viscdefrate'      : viscdefrate,
