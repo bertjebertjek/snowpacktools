@@ -162,6 +162,8 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                                 profs[ts][var] = np.append(profs[ts][var], profs[ts][var][-1] + 2 * surf_hoar[1]/10) # or np.insert()
                             elif var == 'density':
                                 profs[ts][var] = np.append(profs[ts][var], surf_hoar[2])
+                            elif var == 'grain size (mm)':
+                                profs[ts][var] = np.append(profs[ts][var], surf_hoar[1])
                             elif var == 'grain type (Swiss Code F1F2F3)':
                                 profs[ts][var] = np.append(profs[ts][var], surf_hoar[0])
                             elif var == "element deposition date (ISO)":
