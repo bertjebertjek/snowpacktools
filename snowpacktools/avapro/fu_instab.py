@@ -2,7 +2,7 @@
 # Copyright 2022 Avalanche Warning Service Tyrol                               #
 ################################################################################
 # This is free software you can redistribute/modify under the terms of the     #
-# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
+# GNU Affero General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
 import numpy as np
