@@ -2,7 +2,7 @@
 # Copyright 2022 Avalanche Warning Service Tyrol                               #
 ################################################################################
 # This is free software you can redistribute/modify under the terms of the     #
-# GNU Lesser General Public License 3 or later: http://www.gnu.org/licenses    #
+# GNU Affero General Public License 3 or later: http://www.gnu.org/licenses    #
 ################################################################################
 
 import numpy as np
@@ -40,9 +40,12 @@ def get_prof_metadata(file):
     aspect               = child_positionA.text
 
     child_validSlopeAngle    = child_locRef.find(caaml_ns + 'validSlopeAngle')
-    child_SlopeAnglePosition = child_validSlopeAngle.find(caaml_ns + 'SlopeAnglePosition')
-    child_position_angle     = child_SlopeAnglePosition.find(caaml_ns + 'position')
-    slope_angle              = int(child_position_angle.text)
+    if child_validSlopeAngle is None:
+        slope_angle = 0
+    else:
+        child_SlopeAnglePosition = child_validSlopeAngle.find(caaml_ns + 'SlopeAnglePosition')
+        child_position_angle     = child_SlopeAnglePosition.find(caaml_ns + 'position')
+        slope_angle              = int(child_position_angle.text)
 
     """Date"""
     child_timeRef      = xroot.find(caaml_ns + 'timeRef')
@@ -149,6 +152,8 @@ def validate_and_prepare_for_snp(file, new_file):
     
     """Add density section"""
     child_snowProfileResultsOf = xroot.find(caaml_ns + 'snowProfileResultsOf')
+    # if child_snowProfileResultsOf is None:
+    #     return # No profile data
     child_SnowProfileMeasurements = child_snowProfileResultsOf.find(caaml_ns + 'SnowProfileMeasurements')
     try:
         child_densityProfile = child_SnowProfileMeasurements.find(caaml_ns + 'densityProfile')
