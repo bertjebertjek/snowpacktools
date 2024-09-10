@@ -53,7 +53,7 @@ def get_ac_vh16_v2(Eslab, rhoslab, hslab, wf, alp, mute=1, rho_wl=-999, tau_p=-9
         if ele > 0: # positive solution
             ac.append(ele)
     if not ac:
-        ac.append(np.NaN)
+        ac.append(np.nan)
     
     if not mute:
         print('ac = ', str(round(ac*100)/100), 'm;    wf = ', str(round(wf*100)/100),'J/m^2') 
@@ -68,7 +68,7 @@ def get_ac_vh16_v2(Eslab, rhoslab, hslab, wf, alp, mute=1, rho_wl=-999, tau_p=-9
     
     if rho_wl== -999:
         ### Gaume 2017 (bending and tension terms)
-        ac_ga17 = np.NaN
+        ac_ga17 = np.nan
         if not mute:
             print('data missing to calc ac after Gaume17')
     else:    

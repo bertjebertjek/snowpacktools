@@ -68,7 +68,7 @@ def get_S_rb15_v2(H,rho,E,tau_p,alp,mute=1,calcFEM=0, PS=None):
         print('FEM not implemented', 'matlabcode get_S_rb15_v2 line 54...85')
         ###MODEL stress at the depth of the weak layer
     else:
-        msswl = np.NaN
+        msswl = np.nan
         if not mute:
             print('--- Entering failure ini analyt. sol. --- ')
     

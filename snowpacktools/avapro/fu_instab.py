@@ -165,8 +165,8 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
     precstab = sig / precstr
     ### Filter out 'inf' values and replace them with np.nan
     precstab = np.where(precstab==np.inf,np.nan,precstab)
-    extm2fail = (precstab-1) / np.append(np.NaN, np.abs(np.diff(precstab)))
-    extm2fail[extm2fail == 0] = np.NaN
+    extm2fail = (precstab-1) / np.append(np.nan, np.abs(np.diff(precstab)))
+    extm2fail[extm2fail == 0] = np.nan
 
     if plotit:
         datenum = [] # get hourly ticks
@@ -182,7 +182,7 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
         axs[0].plot(datenum, np.append(0, np.diff(precstr))*10,'--k', label= 'precstr')  
         axs[0].legend()
         axt = axs[0].twinx()
-        axt.plot(datenum, np.append(np.NaN, np.diff(consno))>0,'*k', label= 'consno')
+        axt.plot(datenum, np.append(np.nan, np.diff(consno))>0,'*k', label= 'consno')
         axt.plot(datenum, precstab,'--b' ,label='precstab')
         axt.legend()
         axs[0].set_xlabel('date')
@@ -214,7 +214,7 @@ def fu_precstabindx(burialdate, timewindow, precrat, scmodstep, alp=38, plotit=0
     return precstabMIN24,extm2failMIN24,tmcrit,sig,sigLT,sigST,consno,precstab,extm2fail,precstr
 
 
-def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pap',pre_existing = False ,calcFEM=0,overwrite_scmod_strength=0, winddrift = False, dap_nr = False):
+def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.nan,opt='per', WLopt = 'pap',pre_existing = False ,calcFEM=0,overwrite_scmod_strength=0, winddrift = False, dap_nr = False):
     """Calculate instability of snowprofile
     """
     if WLopt == 'pap':
@@ -247,7 +247,7 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
     # lwc = 'lwc'
     # gt = 'graintype'
     # shstrength = 'stress in (kPa)'
-    tcr=np.NaN
+    tcr=np.nan
     
     """Windonly case (here profile is artifically modified - slab created at top)"""
     if opt == 'windonly' : # modify profile data, as WL does not exist in snow cover model output
@@ -335,8 +335,8 @@ def fu_instab(index,df_prof,df_P,df_met,alp=38,c_0=np.NaN,opt='per', WLopt = 'pa
         else:
             #% Stability metrics
             # precstabMIN24 = sig / precstr    # precipitation stability index  ConwayWilbur99 eq 6
-            # extm2failMIN24 = (precstab-1) / np.append(np.NaN, np.abs(np.diff(precstabMIN24))) 
-            # extm2failMIN24[extm2failMIN24 == 0] = np.NaN
+            # extm2failMIN24 = (precstab-1) / np.append(np.nan, np.abs(np.diff(precstabMIN24))) 
+            # extm2failMIN24[extm2failMIN24 == 0] = np.nan
             if WLopt == 'nap':
                 height_opt = 'napup'
             elif WLopt == 'pap':

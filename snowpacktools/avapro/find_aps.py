@@ -283,12 +283,12 @@ def find_lay_prof(config,df_prof,Lup,Lgt,wlopt):
     debug       = int(config.get('AVAPRO', 'debug'))
 
     """Parameter initalization"""
-    Lupnew = np.NaN
-    Llonew = np.NaN
-    Lgtnew = ['np.NaN']
-    Lrho = np.NaN
-    SLdep = np.NaN
-    SLrho = np.NaN
+    Lupnew = np.nan
+    Llonew = np.nan
+    Lgtnew = ['np.nan']
+    Lrho = np.nan
+    SLdep = np.nan
+    SLrho = np.nan
 
     po = 'height_m'
     idx = sum((df_prof[po]-Lup)>0) +1 # index of WL
@@ -781,7 +781,7 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                     df_P.loc[index,'dapDYN'][ele] = DYN
 
                     if df_P.loc[index,'dapINI_tau_p'][ele]/df_P.loc[index,'dapINI_mssANA'][ele]> dropini or df_P.loc[index,'dapPRO_ac_vh16'][ele]> droppro:
-                        df_P.loc[index,'dapup'][ele] = np.NaN #  % that means dropping, see ifloop
+                        df_P.loc[index,'dapup'][ele] = np.nan #  % that means dropping, see ifloop
                         #disp(['    INI:S=',num2str(round(P.dap(mm).INI(nn,1)/P.dap(mm).INI(nn,5)*10)/10),' PROP:ac=',num2str(round(P.dap(mm).PRO(nn,2)*100)),'cm / Sk_',num2str(alp),'=',num2str(round(P.dap(mm).INI(nn,3)*10)/10),' --> drop dap'])
                         if debug: print('[D]    Drop DAP', index)
                     else:
@@ -789,10 +789,10 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                         if debug: print('[D]    DAP still relevant', index)
                 else:
                     if debug: print('[D]    Drop DAP (No WL found)', index)
-                    df_P.loc[index,'dapup'][ele] = np.NaN
+                    df_P.loc[index,'dapup'][ele] = np.nan
                     
         if aggrgtDAPs == 1 and sum( ~np.isnan(df_P['dapup'][index]))>2: 
-            ind_arg = np.NaN
+            ind_arg = np.nan
             for i,x in enumerate(np.diff(df_P['dapup'][index][::])) :
                 if x < aggrgtdiff:
                     ind_arg = i
@@ -804,7 +804,7 @@ def find_prior_problems(config,index,df_prof,df_met,df_P):
                 # print(ind_arg)
                 b = np.argmax(df_P['dapINI_tau_p'][index][ind_arg:ind_arg+2])
                 ind_arg = ind_arg + b      
-                df_P.loc[index,'dapup'][ind_arg] = np.NaN #% that means dropping, see ifloop
+                df_P.loc[index,'dapup'][ind_arg] = np.nan #% that means dropping, see ifloop
                 if debug: print('[D]    Drop DAP', index)
         if outputDAP !=0:
             print('[D]    Implement matlab line 254')
@@ -882,7 +882,7 @@ def identify_wet_ap(config,index,ind_wet,season_list_red,df_met_red,df_P,cycle_n
         else:
             if debug: print('[D]    No WAP') 
     else:
-        df_P.loc[index, 'wapex']= np.NaN
+        df_P.loc[index, 'wapex']= np.nan
     
     return df_P, cycle_nr
 
@@ -960,25 +960,25 @@ def identify_new_nap_or_pap(config,index,ind_dry,season_list_red,df_met_red,df_m
                     df_P.loc[index,'dapDYN'].append(df_P.loc[index,'papDYN'])
                     
                 ### reset the pap instability properties (have just been written to dap)
-                df_P.loc[index,'papDAM_Sn']= np.NaN # natural stability index
-                df_P.loc[index,'papDAM_precstabMIN24'] = np.NaN
-                df_P.loc[index,'papDAM_extm2failMIN24'] = np.NaN
-                df_P.loc[index,'papDAM_tmcrit'] = np.NaN
+                df_P.loc[index,'papDAM_Sn']= np.nan # natural stability index
+                df_P.loc[index,'papDAM_precstabMIN24'] = np.nan
+                df_P.loc[index,'papDAM_extm2failMIN24'] = np.nan
+                df_P.loc[index,'papDAM_tmcrit'] = np.nan
 
-                df_P.loc[index,'papINI_tau_p'] = np.NaN
-                df_P.loc[index,'papINI_c_0']  = np.NaN
-                df_P.loc[index,'papINI_Sk']  = np.NaN
-                df_P.loc[index,'papINI_Sk_ana']  = np.NaN # % McClung & Sz s99, Monti etal 16
-                df_P.loc[index,'papINI_mssANA']  = np.NaN 
-                df_P.loc[index,'papINI_Sk_fem']  = np.NaN #% Rb & Sz 18 GRL append. 
-                df_P.loc[index,'papINI_msswl']  = np.NaN
-                df_P.loc[index,'papINI_sigma_g']  = np.NaN
+                df_P.loc[index,'papINI_tau_p'] = np.nan
+                df_P.loc[index,'papINI_c_0']  = np.nan
+                df_P.loc[index,'papINI_Sk']  = np.nan
+                df_P.loc[index,'papINI_Sk_ana']  = np.nan # % McClung & Sz s99, Monti etal 16
+                df_P.loc[index,'papINI_mssANA']  = np.nan 
+                df_P.loc[index,'papINI_Sk_fem']  = np.nan #% Rb & Sz 18 GRL append. 
+                df_P.loc[index,'papINI_msswl']  = np.nan
+                df_P.loc[index,'papINI_sigma_g']  = np.nan
 
-                df_P.loc[index,'papDYN']  = np.NaN
-                df_P.loc[index,'papPRO_ac_si06']  = np.NaN  
-                df_P.loc[index,'papPRO_ac_vh16'] = np.NaN  
-                df_P.loc[index,'papPRO_wf']  = np.NaN  
-                df_P.loc[index,'papPRO_ac_ga17']  = np.NaN
+                df_P.loc[index,'papDYN']  = np.nan
+                df_P.loc[index,'papPRO_ac_si06']  = np.nan  
+                df_P.loc[index,'papPRO_ac_vh16'] = np.nan  
+                df_P.loc[index,'papPRO_wf']  = np.nan  
+                df_P.loc[index,'papPRO_ac_ga17']  = np.nan
 
                 # get exact position of WL (uppermost persist. layer in window)
                 df_P.loc[index, 'papburial'] = df_met_red.timestamp.iloc[ind_dry] # ???

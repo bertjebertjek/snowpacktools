@@ -65,11 +65,11 @@ def assign_aps(df_P, config):
 
 
     """Look at NAPs of season"""
-    df_P['napex_sele'] = [np.NaN for _ in range(len(df_P))]
-    df_P['napDAM_extm2failMIN24_isrel'] = [np.NaN  for _ in range(len(df_P))]
-    df_P['napINI_isrel'] = [np.NaN for _ in range(len(df_P))]
-    df_P['napPRO_isrel'] = [np.NaN for _ in range(len(df_P))]
-    df_P['napDAM_precstabMIN24_isrel'] = [np.NaN for _ in range(len(df_P))]
+    df_P['napex_sele'] = [np.nan for _ in range(len(df_P))]
+    df_P['napDAM_extm2failMIN24_isrel'] = [np.nan  for _ in range(len(df_P))]
+    df_P['napINI_isrel'] = [np.nan for _ in range(len(df_P))]
+    df_P['napPRO_isrel'] = [np.nan for _ in range(len(df_P))]
+    df_P['napDAM_precstabMIN24_isrel'] = [np.nan for _ in range(len(df_P))]
 
     for index,row in df_P.iterrows():  
             df_P.loc[index,'napex_sele']  = df_P.loc[index,'napex'] * df_P.loc[index,'napcalc'] 
@@ -99,12 +99,12 @@ def assign_aps(df_P, config):
 
     """Look at DAPs of season"""
     df_P['dap_isrel'] = [[0]*50 for _ in range(len(df_P))]
-    df_P['dapDAM_precstabMIN24_isrel'] = [[np.NaN]*50 for _ in range(len(df_P))]
-    df_P['dapDAM_extm2failMIN24_isrel'] = [[np.NaN]*50  for _ in range(len(df_P))]
-    df_P['dapINI_isrel'] = [[np.NaN]*50 for _ in range(len(df_P))]
-    df_P['dapPRO_isrel'] = [[np.NaN]*50 for _ in range(len(df_P))]
-    df_P['dapup_isrel'] =  [[np.NaN]*50 for _ in range(len(df_P))]
-    df_P['dapex_isrel'] = [[np.NaN]*50 for _ in range(len(df_P))]
+    df_P['dapDAM_precstabMIN24_isrel'] = [[np.nan]*50 for _ in range(len(df_P))]
+    df_P['dapDAM_extm2failMIN24_isrel'] = [[np.nan]*50  for _ in range(len(df_P))]
+    df_P['dapINI_isrel'] = [[np.nan]*50 for _ in range(len(df_P))]
+    df_P['dapPRO_isrel'] = [[np.nan]*50 for _ in range(len(df_P))]
+    df_P['dapup_isrel'] =  [[np.nan]*50 for _ in range(len(df_P))]
+    df_P['dapex_isrel'] = [[np.nan]*50 for _ in range(len(df_P))]
     df_P['dapex_isrel_red'] = [0 for _ in range(len(df_P))]
     
     for index,row in df_P.iterrows():
@@ -122,9 +122,9 @@ def assign_aps(df_P, config):
                     
                     ### Set 0 to np.nan
                     if df_P.loc[index,'dapINI_isrel'][ele] == 0:
-                        df_P.loc[index,'dapINI_isrel'][ele] = np.NaN
+                        df_P.loc[index,'dapINI_isrel'][ele] = np.nan
                     if df_P.loc[index,'dapPRO_isrel'][ele] == 0:
-                        df_P.loc[index,'dapPRO_isrel'][ele] = np.NaN
+                        df_P.loc[index,'dapPRO_isrel'][ele] = np.nan
         
             # print(np.sum( ~np.isnan(df_P['dapex_isrel'][index])))
             with warnings.catch_warnings():
@@ -150,12 +150,12 @@ def assign_aps(df_P, config):
     i = np.arange(0,len(df_P['wapLWC'])-1)
     iplus = np.arange(1,len(df_P['wapLWC']))
     df_P['incr'] = df_P['wapLWC'].copy()
-    df_P.loc[iplus, 'incr'] = np.where(((df_P['wapLWC'].values[iplus]-df_P['wapLWC'].values[i])>0.0001), 1, np.NaN)
-    df_P['incr'].values[0] = np.NaN
+    df_P.loc[iplus, 'incr'] = np.where(((df_P['wapLWC'].values[iplus]-df_P['wapLWC'].values[i])>0.0001), 1, np.nan)
+    df_P['incr'].values[0] = np.nan
     
     ### Count days in a row the snowpack is isothermal based on defining isothermal state in find_aps()
     df_P.loc[df_P['wapISO'].isna(), 'wapISO'] = 0 
-    df_P['dysio'] = [np.NaN for _ in range(len(df_P))]
+    df_P['dysio'] = [np.nan for _ in range(len(df_P))]
 
     df_P.loc[0,'dysio'] = 0
     for ii in range(1,len(df_P)):
@@ -167,11 +167,11 @@ def assign_aps(df_P, config):
     ### Format 'waponset'
     df_P.loc[df_P['waponset'].isna(), 'waponset'] = pd.NaT
     
-    # df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset']) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.NaN)
-    df_P['wapex_sele'] = np.where( (pd.to_datetime(df_P['dy']) >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.NaN)
+    # df_P['wapex_sele'] = np.where( (df_P['dy'] >= df_P['waponset']) &  df_P['incr'] & (df_P['dysio'] <dysisomax ), 1, np.nan)
+    df_P['wapex_sele'] = np.where( (pd.to_datetime(df_P['dy']) >= df_P['waponset'])  & (df_P['dysio'] <= dysisomax), 1, np.nan)
     print('[i]  WAPs:', np.sum(df_P['wapex_sele']))
 
-    # df_P['wapLWC_isrel'] = np.where(~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.NaN )
+    # df_P['wapLWC_isrel'] = np.where(~df_P['wapex_sele'].isna(), df_P['wapLWC'], np.nan )
     # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] ==1, df_P['wapLWC_isrel'] / lwcthrsh_0, df_P['wapLWC_isrel'])
     # df_P['wapLWC_isrel'] = np.where(df_P['wapcycle'] > 1, df_P['wapLWC_isrel'] / lwcthrsh_1, df_P['wapLWC_isrel'])
     # print('[i]  WAPs:',len(df_P['wapLWC_isrel'][df_P['wapLWC_isrel'] > 0]))
@@ -185,7 +185,7 @@ def assign_aps(df_P, config):
     ### (Days with neither pap nor nap, but wind loading)
     #? sele=find(P.napwindonly)
     #? df_P['winex'] = df_P['napwindonly']
-    #? df_P['winex'] = np.NaN
+    #? df_P['winex'] = np.nan
     #? df_P['winex'] = np.where ( (df_P['drft']> drftthrsh ) , 1, 0 )
 
     return df_P

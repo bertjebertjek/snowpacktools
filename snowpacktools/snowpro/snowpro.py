@@ -334,7 +334,7 @@ def get_smet_df(path):
     var = pro_helper.get_var_smet(path)
 
     df_smet = pd.read_csv(path, sep=" ", skiprows=18, skipinitialspace=True, names =var) 
-    df_smet = df_smet.replace(-999.0, np.NaN)
+    df_smet = df_smet.replace(-999.0, np.nan)
 
     # Reduce dataframe to variables of interest
     variables_of_intrest = ['timestamp', 'TSS_mod', 'TSS_meas', 'T_bottom' ,'TSG','VW','DW','wind_trans24','VW_drift', 'MS_Wind', 'HS_mod', 'HS_meas',
