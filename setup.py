@@ -25,6 +25,7 @@ setuptools.setup(
         "numpy",
         "matplotlib",
         "pandas",
+        "geopandas",
         "xarray",
         "netcdf4",
         "sympy",
