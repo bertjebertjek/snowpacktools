@@ -94,6 +94,8 @@ def plot_snp_evo(config, DATETIME_STR=None):
         # cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     """Visualization"""
+    if not DATETIME_STR:
+        DATETIME_STR = config.get("SNOWPRO-PROF", "DATETIME")
     if DATETIME_STR==None:
         # fig, (ax_cbar,ax) = plt.subplots(1,2,figsize=(10,5),gridspec_kw={'width_ratios': [0.5,11]})
         fig, ax = plt.subplots(1,1,figsize=(9.5,5))
@@ -144,7 +146,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
     """Hardness profile to the right"""
     if DATETIME_STR!=None:
         ax_prof, DATETIME_STR = plot_single_profile(config,ax=ax_prof)
-        datetime_format = '%Y-%m-%dT%Hh%M'
+        datetime_format = '%Y-%m-%dT%H:%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
         #ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
 
@@ -243,7 +245,7 @@ def plot_single_profile(config, ax=None):
 
     """Get closest profile of PRO file to DATETIME"""
     date_found = 0
-    datetime_format  = '%Y-%m-%dT%Hh%M'
+    datetime_format  = '%Y-%m-%dT%H:%M'
     
     ts = datetime.strptime(DATETIME_STR, datetime_format)
     if ts in profs.keys():
@@ -278,11 +280,17 @@ def plot_single_profile(config, ax=None):
 
     cols=[]
     hatches=[]
+    hardness_last_step = None
     for ilayer in range(0,len(prof['graintype'])):
         cols.append(col_dict_labels[prof['graintype'][ilayer][0]])
         hatches.append(hatches_dict_labels[prof['graintype'][ilayer][0]])
+        hardness = prof['hand hardness'][ilayer]
+        if not hardness or np.isnan(hardness):
+            hardness = hardness_last_step # error if no hardness at all
+        else:
+            hardness_last_step = hardness
         if hand_hardness_param_needed:
-            prof['hand_hardness_N'][ilayer] = hand_hardness_dict[prof['hand hardness'][ilayer]]
+            prof['hand_hardness_N'][ilayer] = hand_hardness_dict[hardness]
     bar_plot   = ax.barh(prof['bottom'], prof['hand_hardness_N'], height=prof['thickness'], align='edge', color=cols, hatch=hatches) # label=labels[i])
     bar_plot_p = ax.barh(prof['bottom'], ZERO_HH_VAL, height=prof['thickness'], align='edge', color=cols, hatch=hatches)
         
