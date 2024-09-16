@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="snowpacktools",
     version="0.0.1",
-    license="LGPL",
+    license="AGPL",
     author="Avalanche Warning Service Tyrol",
     author_email="lawine@tirol.gv.at",
     description="Pre- and postprocessing tools of snowpack simulations.",
