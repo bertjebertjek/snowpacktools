@@ -188,7 +188,7 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
 
 
     if not config:
-        configfile = './input/forecast_runtime_' + domain + '.ini'
+        configfile = os.path.expanduser('~snowpack/gridded-chain/input/runtime_') + domain + '.ini'
         if os.path.exists(configfile):
             config = setup(configfile)
         else:
@@ -278,7 +278,7 @@ def determine_groupings(config, group_regions_geojson, region_ids, aspects, band
 
     """Extend DataFrame with aspect info if not present"""
     if 'aspect' not in df.columns:
-        if config.get('Forecast', 'nslopes') == '5':
+        if config.get('General', 'nslopes') == '5':
             aspect_map = {
             'A': 'flat',
             '0': 'flat',
@@ -395,7 +395,7 @@ def setup(configfile, domain=''):
         config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_output_dir']
 
     """Create directories"""
-    os.makedirs("./output", exist_ok=True)
+    # os.makedirs("./output", exist_ok=True)
     os.makedirs(config['Paths']['_aggregates_output_dir'], exist_ok=True)
     os.makedirs(config['Paths']['_aggregates_figures_dir'], exist_ok=True)
     if os.path.exists("./input"):

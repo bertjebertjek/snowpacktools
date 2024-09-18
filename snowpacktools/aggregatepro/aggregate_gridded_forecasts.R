@@ -31,7 +31,7 @@ library(data.table)
 ## Read config and csv files
 config <- configr::read.config(file = configfile)
 mp_df <- fread(mp_csv, sep = ",", data.table = FALSE)
-vstations <- fread(config$Paths$`_aggregates_vstations_csv_file`, sep = ",", data.table = FALSE)
+vstations <- fread(config$Paths$`_aggregates_vstations_csv_file_processed`, sep = ",", data.table = FALSE)
 source(config$Paths$`_aggregates_plotters_path`)
 
 ## Parse DTW hyperparameter settings:
@@ -95,17 +95,21 @@ for (i in seq_len(nrow(mp_df))) {
       tz_string <- ifelse(tz_unique >= 0, paste0("Etc/GMT-", tz_unique), paste0("Etc/GMT+", abs(tz_unique)))
       ##  Generate relevant datetime period to aggregate
       #   based on first file dates and by assuming all .pro files have the same dates
-      dtopera <- as.Date(config$Forecast$date_opera)
+      dtopera <- as.Date(config$General$date_opera)
       dailytime_parts <- strsplit(config$Aggregate$daily_time, ":")[[1]]
       hours <- as.numeric(dailytime_parts[1])
       minutes <- as.numeric(dailytime_parts[2])
       fdatetime <- scanProfileDates(file_names_sub[1], tz = tz_string)
-      dtmax <- min(max(fdatetime), as.POSIXct(format(as.Date(config$Forecast$season_end), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
+      dtmax <- min(max(fdatetime), as.POSIXct(format(as.Date(config$General$season_end), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
       if (config$Aggregate$initialize_from == 'date_opera') {
         dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
+        if (dtopera >= dtmax) {
+          stop(paste0("config$initialize_from is set to date_opera, but that's past the season_end.",
+         " Either set to season_start or set date_opera to a prior date."))
+        }
         dtperiod <- seq(dtopera, dtmax, by = "day")
       } else if (config$Aggregate$initialize_from == 'season_start') {
-        dt_season_start = as.POSIXct(format(as.Date(config$Forecast$season_start), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
+        dt_season_start = as.POSIXct(format(as.Date(config$General$season_start), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
         if (min(fdatetime) > dt_season_start) {
           dtmin <- dt_season_start + 86400  # adding one day in seconds
         } else {
@@ -228,13 +232,13 @@ for (i in seq_len(nrow(mp_df))) {
       ## ---hand hardness profile-----------------------------------------------
       ## single hand hardness profile with instability distributions
       if (config$Aggregate$plot_handhardness) {
-        for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$Forecast$date_opera) &
-                                    avg$meta$date < as.Date(config$Forecast$date_opera) + as.double(config$Aggregate$plot_leadtime_days_handhardness)]) {
-          leadtime <- as.numeric(as.Date(pdate) - as.Date(config$Forecast$date_opera)) # (days)
+        for (pdate in avg$meta$date[avg$meta$date >= as.Date(config$General$date_opera) &
+                                    avg$meta$date < as.Date(config$General$date_opera) + as.double(config$Aggregate$plot_leadtime_days_handhardness)]) {
+          leadtime <- as.numeric(as.Date(pdate) - as.Date(config$General$date_opera)) # (days)
           fname <- paste0(
             config$Paths$`_aggregates_figures_dir`, "/",
             "hhp_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-            format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+            format(as.Date(config$General$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
           )
           png(filename = fname, width = 800, height = 700)
           par(cex.lab = 1.65, cex.axis = 1.8, bg = "white")
@@ -246,11 +250,11 @@ for (i in seq_len(nrow(mp_df))) {
       ## ---avg timeseries-----------------------------------------------------
       if (config$Aggregate$plot_tsplain) {
         pdate <- max(avg$meta$date)
-        leadtime <- as.numeric(pdate - as.Date(config$Forecast$date_opera)) # (days)
+        leadtime <- as.numeric(pdate - as.Date(config$General$date_opera)) # (days)
         fname <- paste0(
           config$Paths$`_aggregates_figures_dir`, "/",
           "tsplain_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-          format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+          format(as.Date(config$General$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
         )
         png(filename = fname, width = 1200, height = 600)
         par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
@@ -261,11 +265,11 @@ for (i in seq_len(nrow(mp_df))) {
       ## ---avg timeseries w/ stability overplot-------------------------------
       if (config$Aggregate$plot_tsstability) {
         pdate <- max(avg$meta$date)
-        leadtime <- as.numeric(pdate - as.Date(config$Forecast$date_opera)) # (days)
+        leadtime <- as.numeric(pdate - as.Date(config$General$date_opera)) # (days)
         fname <- paste0(
           config$Paths$`_aggregates_figures_dir`, "/",
           "tsstab_", mp_df[i, "region_id"], "_", mp_df[i, "band"], "_", mp_df[i, "aspect"], "_",
-          format(as.Date(config$Forecast$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
+          format(as.Date(config$General$date_opera), "%y%m%d"), "+", as.integer(leadtime), "d", ".png"
         )
         png(filename = fname, width = 1200, height = 600)
         par(cex.lab = 1.4, cex.axis = 1.4, bg = "white")
