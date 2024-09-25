@@ -1,9 +1,4 @@
-################################################################################
-# Copyright 2022 Avalanche Warning Service Tyrol                               #
-################################################################################
-# This is free software you can redistribute/modify under the terms of the     #
-# GNU Affero General Public License 3 or later: http://www.gnu.org/licenses    #
-################################################################################
+#! /usr/bin/python3
 
 import numpy as np
 from lxml import etree as et
@@ -11,9 +6,10 @@ import os
 
 caaml_ns = "{http://caaml.org/Schemas/SnowProfileIACS/v6.0.3}"
 gml_ns = "{http://www.opengis.net/gml}"
+grain_types_without_ice = ['PP','PPgp','DF','RG','FCxr','FC','DH','SH','MF','MFcr']
 
 def get_prof_metadata(file):
-    '''Returns dictionary of relevant metadata for provided snowprofile.'''
+    """Returns dictionary of relevant metadata for provided snowprofile."""
 
     tree = et.parse(file)
     xroot = tree.getroot()
@@ -127,17 +123,17 @@ def add_snp_metadata(tree: object):
 
 
 def validate_and_prepare_for_snp(file, new_file):
-    """
-    Adds density profile based on grain shape and hardness parameterization alla Monti (2014)
+    """Checks profile for SNP requirements and adds density profile based on grain shape and hardness parameterization alla Monti et al. (2014)
 
-    Arguments:
-        file / new_file (str):          Path to xml file of snowprofile
-        remove_observed_density (bool): Relevant when density is already provided from the observations (already included in .caaml file)
+    Arguments
+    ---------
+    file / new_file (str):          Path to xml file of snowprofile
+    remove_observed_density (bool): Relevant when density is already provided from the observations (already included in .caaml file)
 
-    Returns nothing, but saves new profile
-
-    Comments:
-        - If density exists from observation or simulation it is removed
+    Comments
+    --------
+    - If density exists from observation or simulation it is removed
+    
     """
 
     try:
@@ -220,7 +216,7 @@ def validate_and_prepare_for_snp(file, new_file):
             val_wetness.text = check_wetness(val_wetness.text)
 
         """Check if grain size is available"""
-        if grainFormPrimary in ["PP","DF","FC","RG"]:
+        if grainFormPrimary in grain_types_without_ice:
             child_grainType = layer.find(caaml_ns + 'grainSize')
             if child_grainType is None:
                 print(f"[i]  Grain size is missing for observed snow profile {file.split('/')[-1]}. File will be removed.")
@@ -231,7 +227,7 @@ def validate_and_prepare_for_snp(file, new_file):
 
 
 def monti_density(form, form2, hardness_str):
-    """Density parameterisation from Monti 2014"""
+    """Density parameterisation from Monti et al. (2014)"""
 
     """
     #### - SNOW CRYSTAL SHAPES - ####
@@ -388,4 +384,4 @@ def check_handHardness(hh_input):
 
 
 if __name__ == "__main__":
-    print("This script provides useful functions to process CAAMLv6 snow profiles. Call them directly.")
+    print("This script provides useful functions to process CAAMLv6 snow profiles. Call them directly via the Python package.")
