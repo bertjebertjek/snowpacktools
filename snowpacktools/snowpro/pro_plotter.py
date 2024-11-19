@@ -63,18 +63,20 @@ def plot_snp_evo(config, DATETIME_STR=None):
             profs     = instability_rfm_mayer.calc_punstable(profs)
             cmap_var  = pro_helper.get_Punstable_cmap()
             var_ticks = np.arange(0,1.1,0.1)
+        elif var == "ccl":
+            cmap_var  = pro_helper.get_ccl_cmap()
+            var_ticks = np.arange(0,1.1,0.1)
+        elif var == 'Sk38' or var == 'Sn38':
+            cmap_var  = pro_helper.get_sk38_cmap()
+            var_ticks = np.arange(0,1.6,0.1)
         else:
-            if var == 'Sk38' or var == 'Sn38':
-                cmap_var  = pro_helper.get_sk38_cmap()
-                var_ticks = np.arange(0,1.6,0.1)
-            else:
-                cmap_var = plt.get_cmap('plasma_r')
+            cmap_var = plt.get_cmap('plasma_r')
         clev_var = np.linspace(RANGE_DICT[var][0],RANGE_DICT[var][1],100) # 11
         # cnorm_var = BoundaryNorm(boundaries=clev_var, ncolors=cmap_var.N, clip=True)
 
     plot_second_var  = False
     var_alpha        = 1
-    second_vars      = ['Sk38','Sn38','Punstable']
+    second_vars      = ['Sk38','Sn38','Punstable','ccl']
     hatch_second_var = ''
     if second_var in second_vars:
         plot_second_var = True
@@ -94,8 +96,8 @@ def plot_snp_evo(config, DATETIME_STR=None):
         # cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     """Visualization"""
-    if not DATETIME_STR:
-        DATETIME_STR = config.get("SNOWPRO-PROF", "DATETIME")
+    # if not DATETIME_STR:
+    #     DATETIME_STR = config.get("SNOWPRO-PROF", "DATETIME")
     if DATETIME_STR==None:
         # fig, (ax_cbar,ax) = plt.subplots(1,2,figsize=(10,5),gridspec_kw={'width_ratios': [0.5,11]})
         fig, ax = plt.subplots(1,1,figsize=(9.5,5))
@@ -148,7 +150,7 @@ def plot_snp_evo(config, DATETIME_STR=None):
         ax_prof, DATETIME_STR = plot_single_profile(config,ax=ax_prof)
         datetime_format = '%Y-%m-%dT%H:%M'
         time_of_profile = datetime.strptime(DATETIME_STR, datetime_format)
-        #ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
+        ax.axvline(x=time_of_profile,ymin=-0.1, ymax=1.1, color='black', lw=1.5, ls='--')
 
     """COLORBAR (Norm, bins, formatter, ticks - lots of stuff to make colorbar look nice)"""
     if second_var!='NONE':
@@ -208,8 +210,9 @@ def plot_snp_evo(config, DATETIME_STR=None):
     meta_y = 0.975
     header_str   = 'Location:' + '\nElevation:' + '\nSlope Angle:' + '\nAspect:'
     header_str_2 = meta_dict['StationName'] + '\n' + meta_dict['Altitude'] + 'm\n' + str(int(float(meta_dict['SlopeAngle']))) + '°\n' + str(int(float(meta_dict['SlopeAzi'])))  + '°'
-    #ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
-    #ax.text(meta_x + 0.12, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    ## cmb-prezis ##
+    ax.text(meta_x,        meta_y, header_str,   horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
+    ax.text(meta_x + 0.12, meta_y, header_str_2, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes, fontsize=10) # ma='left'
     
     """Save figure"""
     if output_name == 'NONE':

@@ -30,6 +30,6 @@ setuptools.setup(
         "netcdf4",
         "sympy",
         "joblib",
-        "scikit-learn<=1.2"
+        "scikit-learn"
     ]
 )

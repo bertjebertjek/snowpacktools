@@ -52,7 +52,7 @@ def get_pro_code_dict():
                     "0603": "hardness difference (1)",
                     "0604": "RTA",                              # "Structural stability" index or with SNP-HACKING "Relative threshold sum approach (RTA)"
                     "0605": "inverse texture index ITI (Mg m-4)",
-                    "0606": "critical cut length (m)"}
+                    "0606": "ccl"} # critical crack length (m)
 
 
     """Set up list of variabels of interest"""
@@ -266,10 +266,10 @@ def get_sk38_cmap2(colors):
 
 def get_sk38_cmap():
     """Create a custom colormap with smooth transitions between the given colors."""
-    c0 = 'red'
-    c1 = 'darkorange'
+    c0 = '#d1001f'
+    c1 = '#FF9F00'
     c2 = 'yellow'
-    c3 = 'limegreen'
+    c3 = '#85CC6F'
     colors = [(0.0, c0), (0.32, c0), (0.4, c1), (0.6, c1), (0.68, c2), (0.73, c2), (0.78, c3), (1.0, c3)]
     
     cmap = LinearSegmentedColormap.from_list('Sk38', colors=colors, N=256)
@@ -278,15 +278,27 @@ def get_sk38_cmap():
 
 def get_Punstable_cmap():
     """Create a custom colormap with smooth transitions between the given colors."""
-    c4 =  '#d1001f' # '#C21807'
+    c3 =  '#d1001f' # '#C21807'
     #c3 = '#ED2939'
-    c3 = '#C21807'
+    #c3 = '#C21807'
     c2 = '#FF9F00'  # 'darkorange' '#FF9F00' #
     c1 = '#85CC6F' # '#A0E989'
     c0 = '#136207'
-    colors = [(0.0, c0), (0.03, c0), (0.05, c1), (0.4, c1), (0.45, c2), (0.65, c2), (0.7, c3), (0.8, c3), (0.85, c4), (1.0, c4)]
+    colors = [(0.0, c1), (0.5, c1), (0.7, c2), (0.74, c2), (0.8, c3), (1.0, c3)]
     
-    cmap = LinearSegmentedColormap.from_list('Sk38', colors=colors, N=256)
+    cmap = LinearSegmentedColormap.from_list('Punstable', colors=colors, N=256)
+    return cmap
+
+
+def get_ccl_cmap():
+    """Create a custom colormap with smooth transitions between the given colors."""
+    c3 =  '#d1001f' # '#C21807'
+    c2 = '#FF9F00'  # 'darkorange' '#FF9F00' #
+    c1 = '#85CC6F' # '#A0E989'
+    c0 = '#136207'
+    colors = [(0.0, c3), (0.26, c3), (0.3, c2), (0.38, c2), (0.52, c1), (1, c1)]
+    
+    cmap = LinearSegmentedColormap.from_list('ccl', colors=colors, N=256)
     return cmap
 
 
@@ -321,9 +333,9 @@ def get_range_dict():
 
     RANGE_DICT =   {'Sk38':                         [0,1.5],
                     'Sn38':                         [0,1.5],
-                    'RTA':                          [0.7,1],
+                    'RTA':                          [0,1],
                     'Punstable':                    [0,1],
-                    'critical cut length (m)':      [0,2],
+                    'ccl':                          [0,1],
                     'density':                      [0,550],
                     'temperature':                  [-12,0],
                     'lwc':                          [0,100],
