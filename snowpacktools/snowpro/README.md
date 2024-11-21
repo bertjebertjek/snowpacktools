@@ -40,6 +40,10 @@ Atm I think bar-plots are the best solution for plotting the snowpack evolution.
 Some example visualizations:
 
 <p float="center">
+  <img src="./figures/WFJ-AWS_snp_evo_sarp.png" width="85%" />
+</p>
+
+<p float="center">
   <img src="./figures/WFJ-AWS_snp_evo_and_profile.png" width="85%" />
 </p>
 
