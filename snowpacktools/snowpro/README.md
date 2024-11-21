@@ -48,7 +48,7 @@ Some example visualizations:
 </p>
 
 <p float="center">
-  <img src="./figures/WFJ-AWS_snp_evo_and_profile.png" width="85%" />
+  <img src="./figures/WFJ-AWS_snp_evo_Sk38.png" width="85%" />
 </p>
 
 <p float="center">
