@@ -40,23 +40,19 @@ Atm I think bar-plots are the best solution for plotting the snowpack evolution.
 Some example visualizations:
 
 <p float="center">
-  <img src="./figures/snp-evo-Speicherteich.png" width="85%" />
+  <img src="./figures/WFJ-AWS_snp_evo_and_profile.png" width="85%" />
 </p>
 
 <p float="center">
-  <img src="./figures/snp-evo-and-profile-Speicherteich Dohlennest.png" width="85%" />
+  <img src="./figures/WFJ-AWS_snp_evo_Punstable.png" width="85%" />
 </p>
 
 <p float="center">
-  <img src="./figures/snp-evo-Ottenspitze_28_base_sk38.png" width="85%" />
+  <img src="./figures/WFJ-AWS_snp_evo_and_profile.png" width="85%" />
 </p>
 
 <p float="center">
-  <img src="./figures/snp-evo-Ottenspitze_28_base_Punstable.png" width="85%" />
-</p>
-
-<p float="center">
-  <img src="./figures/snp-evo-Ottenspitze_28_sk38.png" width="85%" />
+  <img src="./figures/WFJ-AWS_snp_evo_sk38all.png" width="85%" />
 </p>
 
 ## Relevant references

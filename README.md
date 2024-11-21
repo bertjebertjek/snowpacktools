@@ -9,7 +9,7 @@ A tool to prepare CAAMLv6 snow profile files to initialize Snowpack simulations.
 A processing tool to parse .pro files and visualize the snowpack evolution. Avapro is based on the datastructure provided through snowpro.
 
 <p float="center">
-  <img src="./snowpacktools/snowpro/figures/snp-evo-and-profile-Speicherteich Dohlennest.png" width="85%" />
+  <img src="./snowpacktools/snowpro/figures/WFJ-AWS_snp_evo_Punstable.png" width="85%" />
 </p>
 
 -> [snowpro](https://gitlab.com/avalanche-warning/snow-cover/postprocessing/snowpacktools/-/tree/main/snowpacktools/snowpro)

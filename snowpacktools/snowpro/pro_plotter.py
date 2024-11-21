@@ -96,8 +96,6 @@ def plot_snp_evo(config, DATETIME_STR=None):
         # cnorm_var2 = BoundaryNorm(boundaries=clev_var2, ncolors=cmap_var2.N, clip=False)
 
     """Visualization"""
-    # if not DATETIME_STR:
-    #     DATETIME_STR = config.get("SNOWPRO-PROF", "DATETIME")
     if DATETIME_STR==None:
         # fig, (ax_cbar,ax) = plt.subplots(1,2,figsize=(10,5),gridspec_kw={'width_ratios': [0.5,11]})
         fig, ax = plt.subplots(1,1,figsize=(9.5,5))

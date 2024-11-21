@@ -82,7 +82,10 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                     if len(height) == 1 and height.item() == 0: profs[ts][PRO_CODE_DICT[line[:4]]] = np.array([])
                     else: profs[ts][PRO_CODE_DICT[line[:4]]] = height
                 elif line[:4] == "0505":
-                    profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype='datetime64[s]')
+                    try:
+                        profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype='datetime64[s]')
+                    except:
+                        profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype=float)
                 else:
                     profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype=float)
 
@@ -167,7 +170,10 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                             elif var == 'grain type (Swiss Code F1F2F3)':
                                 profs[ts][var] = np.append(profs[ts][var], surf_hoar[0])
                             elif var == "element deposition date (ISO)":
-                                profs[ts][var] = np.append(profs[ts][var], np.datetime64('NaT'))
+                                try:
+                                    profs[ts][var] = np.append(profs[ts][var], np.datetime64('NaT'))
+                                except:
+                                    profs[ts][var] = np.append(profs[ts][var], np.nan)
                             else:
                                 profs[ts][var] = np.append(profs[ts][var], np.nan)
 
