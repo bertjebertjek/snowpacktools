@@ -8,10 +8,10 @@ The package makes use of the R package [`sarp.snowprofile.alignment`](https://bi
 The module will aggregate simulated snow profiles from given combinations of region, elevation band, and aspect into a representative profile. This representative profile can then be plotted as time series or traditional hand hardness profile. Instability distributions will be highlighted so that users can quickly understand which layers are modeled with largely poor instabilities and when these instabilities are most likely to occur. The currently implemented main stability tool is from Mayer et al (2022) and predicts **dry** snow layer instability based on skier triggering, called *p_unstable*.
 
 Here is a representative snow profile for a small forecast subregion in northern Norway, 300-600 m asl, north facing 38 degree slope:
-![](aux/tsstab_kattfjordeidet_0300-0600_north_240326+0d.png)
+![](aux/tsstab_kattfjordeidet_0300-0600_north_240326_0d.png)
 
 And here is a hand hardness profile from an unstable day early January, that compares the process-based dry snow instability index SK38 & RTA with p_unstable:    
-![](aux/hhp_kattfjordeidet_0300-0600_north_240108+0d.png)
+![](aux/hhp_kattfjordeidet_0300-0600_north_240108_0d.png)
 
 ### Usage
 The module can be used in a bulk mode (research mode) or in an operational day-to-day mode, called either as script with command line arguments, or interactively within Python. The season mode allows to compute a time series of the representative profile for an entire season at a time. In an operational setting, the module aggregates the current day (and also several days of forecasts if available) before storing the intermediate results for the new computations the next day. On the next day, the previous lead-time forecasts will be overriden by more recent simulation data.

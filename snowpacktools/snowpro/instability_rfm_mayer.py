@@ -40,6 +40,9 @@ def calc_punstable(profs, timestamps=None, verbose=True):
     if timestamps is None:
         timestamps = profs.keys()
     for ts in timestamps:
+        if ts not in profs.keys():
+            continue
+        
         prof = profs[ts]
 
         """Get features for RF model and stack"""
@@ -75,6 +78,9 @@ def calc_punstable(profs, timestamps=None, verbose=True):
     
     i0 = 0
     for i,ts in enumerate(timestamps):
+        if ts not in profs.keys():
+            continue
+
         i1 = i0+iprofs[i]
         #profs[ts]['Punstable'] = df_features['Punstable'][i0:i1].values
         profs[ts]['Punstable'] = Punstable[i0:i1]
