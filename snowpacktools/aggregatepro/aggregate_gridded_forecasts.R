@@ -2,7 +2,7 @@
 #' 
 #' Call this script from the command line to aggregate gridded forecasts
 #' e.g., Rscript ./aggregate_gridded_forecasts.R --config config.ini --mp_csv input/aggregates_groupings/domain-0.csv [--worker_int 1]
-#' @AWSOME: it expects to be called from the `forecasts` directory (or as specified in forecast_runtime_domain.ini: ['Paths']['_cwd_'])
+#' @AWSOME: it expects to be called from the `~snowpack/gridded-chain/` directory
 #' 
 #' <fherla>
 
@@ -20,6 +20,15 @@ tryCatch({
 if (length(worker) == 0) worker <- "0"
 
 cat(paste0("[i] (", worker, ") RScript: Working directory set to ", getwd(), "\n"))
+# cat(paste0(
+# 'For debugging, paste the following into an R session:
+
+# mock_args <- c("--config", "', configfile, '",
+#                "--mp_csv", "', mp_csv, '")
+# assign("commandArgs", function(...) mock_args, envir = .GlobalEnv)
+# source("/opt/awsome/code/snow-cover/postprocessing/snowpacktools/snowpacktools/aggregatepro/aggregate_gridded_forecasts.R", echo = TRUE)
+# '
+# ))
 
 library(sarp.snowprofile)
 library(sarp.snowprofile.alignment)
@@ -100,12 +109,20 @@ for (i in seq_len(nrow(mp_df))) {
       hours <- as.numeric(dailytime_parts[1])
       minutes <- as.numeric(dailytime_parts[2])
       fdatetime <- scanProfileDates(file_names_sub[1], tz = tz_string)
-      dtmax <- min(max(fdatetime), as.POSIXct(format(as.Date(config$General$season_end), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string))
+      dt_season_end <- as.POSIXct(format(as.Date(config$General$season_end), paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
+      dtmax <- min(max(fdatetime), dt_season_end)
       if (config$Aggregate$initialize_from == 'date_opera') {
         dtopera <- as.POSIXct(format(dtopera, paste0("%Y-%m-%d ", hours, ":", minutes)), tz = tz_string)
-        if (dtopera >= dtmax) {
+        if (dtopera >= dt_season_end) {
           stop(paste0("config$initialize_from is set to date_opera, but that's past the season_end.",
          " Either set to season_start or set date_opera to a prior date."))
+        } else if (dtopera > dtmax)  {
+          print(paste0("[i]  No profiles available yet for date_opera at daily_time. Trying to initialize from",
+          " previous day since config$initialize_from is set to date_opera."))
+          dtopera <- dtopera - as.difftime(1, units = "days")
+          if (dtopera < min(fdatetime)) {
+            stop("No profiles available for date_opera@daily_time minus 1 day.")
+          }
         }
         dtperiod <- seq(dtopera, dtmax, by = "day")
       } else if (config$Aggregate$initialize_from == 'season_start') {
@@ -163,7 +180,6 @@ for (i in seq_len(nrow(mp_df))) {
         sm$ski_pen[smi] = wxlist[[sm$profile_number[smi]]]$data$ski_pen[wxlist[[sm$profile_number[smi]]]$data$timestamp %in% sm$datetime[smi]]
       }
 
-      
       ## ---Preprocess profiles-----------------------------------------------
       profileset <- computeRTA(profileset)
       profileset <- computePunstable(profileset, ski_pen = sm$ski_pen)

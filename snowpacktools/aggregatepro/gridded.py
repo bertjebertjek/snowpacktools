@@ -198,6 +198,9 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
     
     df_unique_grouping = determine_groupings(config, group_regions_geojson, region_ids, aspects, bands)
     df_unique_grouping.sort_values(['region_id', 'band', 'aspect']).to_csv(config.get('Paths','_aggregates_groupings_csv') + "summary.csv", index=False)
+    print(df_unique_grouping)
+    if df_unique_grouping.shape[0] == 0:
+        raise ValueError("Cannot find a single grouping of vstations. Maybe all your vstation simulations were erroneous (i.e., vstations csv error column != 0)?")
 
     """set parallel processing context"""
     print(f"[i]  Running aggregation script on {config.getint('General','ncpus')} CPUs.\n\n")
@@ -215,6 +218,7 @@ def aggregate(config=None, domain=None, group_regions_geojson=None, region_ids=N
     t0 = datetime.now()
     ## Start processes
     for i in range(0,config.getint('Aggregate','ntasks')):
+        # proc = _worker_aggregation(i, config)  # for easier debugging..
         proc = multiprocessing.Process(target=_worker_aggregation, args=(i, config))
         procs.append(proc)
         proc.start()
@@ -388,8 +392,8 @@ def setup(configfile, domain=''):
     config['Paths']['_aggregates_output_dir'] = config['Paths']['_aggregates_output_basedir'] + "/aggregates" + domain_appendix
     config['Paths']['_aggregates_figures_dir'] = config['Paths']['_aggregates_output_basedir'] + "/aggregates-figs" + domain_appendix
     
-    if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file_runtime':
-        config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file_runtime']
+    if config.get('Paths', '_aggregates_vstations_csv_file') == '_vstations_csv_file':
+        config['Paths']['_aggregates_vstations_csv_file'] = config['Paths']['_vstations_csv_file']
     config['Paths']['_aggregates_vstations_csv_file_processed'] = config['Paths']['_aggregates_vstations_csv_file']
     if config.get('Paths', '_aggregates_snp_pro_dir') == '_snp_output_dir':
         config['Paths']['_aggregates_snp_pro_dir'] = config['Paths']['_snp_output_dir']
