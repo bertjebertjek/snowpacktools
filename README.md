@@ -27,7 +27,7 @@ Assessment and Validation of Avalanche PROblems. An automated characterization o
 A tool to compute a representative profile from a larger group of profiles and visualize layer stability distributions.
 
 <p float="center">
-  <img src="./snowpacktools/aggregatepro/aux/tsstab.png" width="85%" />
+  <img src="./snowpacktools/aggregatepro/figures/tsstab.png" width="85%" />
 </p>
 
 -> [aggregatepro](https://gitlab.com/avalanche-warning/snow-cover/postprocessing/snowpacktools/-/tree/main/snowpacktools/aggregatepro)
