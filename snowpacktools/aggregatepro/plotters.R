@@ -95,7 +95,7 @@ plotTSplainAvgProfile <- function(avgSP) {
     par(mar = c(6.1, 6.1, 3.1, 0.1))
 
     ## ---plot average profile-------------------------------------------------
-    plot(avgSP$avgs, box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE)
+    plot(avgSP$avgs, SortMethod = "time_daily", box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, Timeseries_labels='daily', VerticalGrid=FALSE)
     lines(avgSP$meta$date, avgSP$meta$hs_median, lwd = 2)
     lines(avgSP$meta$date, avgSP$meta$hs_median-avgSP$meta$thicknessPPDF_median, lwd = 2, lty = "dashed")
     mtext("Height (cm)", side = 2, line = 4, cex = opar$cex.lab)
@@ -127,8 +127,8 @@ plotTSstabilityAvgProfile <- function(avgSP) {
     ## ---plot average profile-------------------------------------------------
     xmax_extension <- 0.04
     xmax <- max(avgSP$meta$date) + diff(range(avgSP$meta$date)) * xmax_extension
-    plot(avgSP$avgs, box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, colAlpha = 0.3, DateEnd = xmax)
-    plot(avgSP$avgs, box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, DateEnd = xmax, ColParam = "percentage", add = TRUE)
+    plot(avgSP$avgs, SortMethod = "time_daily", box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, colAlpha = 0.3, DateEnd = xmax, Timeseries_labels='daily', VerticalGrid=FALSE)
+    plot(avgSP$avgs, SortMethod = "time_daily", box = FALSE, xaxs = "i", yaxs = "i", yaxt = "n", ylab = "", yaxis = FALSE, DateEnd = xmax, ColParam = "percentage", add = TRUE)
     lines(avgSP$meta$date, avgSP$meta$hs_median, lwd = 2)
     lines(avgSP$meta$date, avgSP$meta$hs_median - avgSP$meta$thicknessPPDF_median, lwd = 2, lty = "dashed")
     mtext("Height (cm)", side = 2, line = 4, cex = opar$cex.lab)
@@ -164,6 +164,6 @@ plotTSstabilityAvgProfile <- function(avgSP) {
 
     # Add labels to the colorbar
     axis(4, at = seq(0, 1 * diff(par("usr")[3:4]), by = 0.25 * diff(par("usr")[3:4])), labels = seq(0, 1, by = 0.25), las = 1)
-    mtext("Percentage of unstable grid points", side = 4, line = 2)
+    mtext("Percentage of unstable grid points", side = 4, line = 3)
 
 }

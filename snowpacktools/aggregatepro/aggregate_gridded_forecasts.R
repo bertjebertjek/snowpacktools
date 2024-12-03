@@ -137,7 +137,6 @@ for (i in seq_len(nrow(mp_df))) {
         stop("config$Aggregate$initialize_from must be one of ['season_start', 'date_opera']")
       }
 
-      
       ##  ---Read profiles----------------------------------------------------
       if (length(dtperiod) > 1) {
         profileset <- snowprofileSet(do.call("c", lapply(file_names_sub, snowprofilePro, ProfileDate = dtperiod, 
@@ -179,14 +178,14 @@ for (i in seq_len(nrow(mp_df))) {
       for (smi in seq(nrow(sm))) {
         sm$ski_pen[smi] = wxlist[[sm$profile_number[smi]]]$data$ski_pen[wxlist[[sm$profile_number[smi]]]$data$timestamp %in% sm$datetime[smi]]
       }
-
+      
       ## ---Preprocess profiles-----------------------------------------------
       profileset <- computeRTA(profileset)
       profileset <- computePunstable(profileset, ski_pen = sm$ski_pen)
       profileset <- snowprofileSet(lapply(profileset, function(sp) {
         labelPWL(sp, pwl_gtype = c("SH", "DH", "FCxr", "FC"), threshold_gtype = c("FC", "FCxr"), threshold_RTA = 0.8)
       }))
-
+      
       ## ---Do aggregation----------------------------------------------------
       ## Load existing aggregate profile from file if available
       k_rds <- which(grepl(paste(mp_df[i, "region_id"], mp_df[i, "band"], mp_df[i, "aspect"], sep = "_"), rds_names))
@@ -242,9 +241,8 @@ for (i in seq_len(nrow(mp_df))) {
       }
       
 
-
       ## ---Plot figures-------------------------------------------------------
-
+      
       ## ---hand hardness profile-----------------------------------------------
       ## single hand hardness profile with instability distributions
       if (config$Aggregate$plot_handhardness) {
@@ -292,13 +290,14 @@ for (i in seq_len(nrow(mp_df))) {
         plotTSstabilityAvgProfile(avg)
         dev.off()
       }
-
     } else {
       cat(paste0("[i] (", worker, ") Not aggregating b/c less than two profiles for ", mp_df[i, "region_id"], " ",
                  mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n"))
     }
   }, error = function(e) {
     cat(paste0(e$message, "\n"))
+    # cat("Traceback:\n")  # for debugging
+    # traceback()          # for debugging
     cat(paste0("\n\n[E] (", worker, ") Error while aggregating profiles for ", mp_df[i, "region_id"], " ",
                mp_df[i, "band"], " ", mp_df[i, "aspect"], " \n\n"))
   })  # END tryCatch
