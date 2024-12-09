@@ -25,8 +25,11 @@ def calc_punstable(profs, timestamps=None, verbose=True):
     """
 
     """Load Mayer's instability model (model was developed using Python 3.7.4 and scikit.learn version 0.22.1)"""
-    model = joblib.load(os.path.join("/".join(__file__.split("/")[:-1]), "models", "RF_instability_model.sav"))
 
+    # NOTE: @mb: Maybe dictionary with timestamps and then a lsit with two entries i0 and i1 is more robust.
+    # Check when preparing profiles that timestamp is full hour!
+
+    model = joblib.load(os.path.join("/".join(__file__.split("/")[:-1]), "models", "RF_instability_model.sav"))
 
     """Calculate Punstable and further properties for all profiles and layers"""
     slopeangle   = 0 # only used for calculation of penetration depth to check whether hard MFcrusts exists with thickness > 3 cm perpendicular to slope.
@@ -76,15 +79,15 @@ def calc_punstable(profs, timestamps=None, verbose=True):
     if verbose:
         print('[i]  RF-model prediction: {}s'.format(time.time()-start_process))
     
+    i  = 0
     i0 = 0
-    for i,ts in enumerate(timestamps):
+    for ts in timestamps: 
         if ts not in profs.keys():
             continue
-
         i1 = i0+iprofs[i]
-        #profs[ts]['Punstable'] = df_features['Punstable'][i0:i1].values
         profs[ts]['Punstable'] = Punstable[i0:i1]
         i0=i1
+        i=i+1
 
     return profs
 
