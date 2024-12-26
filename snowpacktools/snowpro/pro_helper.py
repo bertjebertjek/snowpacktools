@@ -1,14 +1,6 @@
-################################################################################
-# Copyright 2022 Avalanche Warning Service Tyrol                               #
-################################################################################
-# This is free software you can redistribute/modify under the terms of the     #
-# GNU Affero General Public License 3 or later: http://www.gnu.org/licenses    #
-################################################################################
-
 import datetime
 import numpy as np
 import pandas as pd
-import time
 
 import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap, to_rgba
