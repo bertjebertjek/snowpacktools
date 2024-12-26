@@ -1,29 +1,14 @@
-################################################################################
-# Copyright 2022 Avalanche Warning Service Tyrol                               #
-################################################################################
-# This is free software you can redistribute/modify under the terms of the     #
-# GNU Affero General Public License 3 or later: http://www.gnu.org/licenses    #
-################################################################################
-
-import os
 import sys
 import time
-import configparser
-
 import numpy as np
 import pandas as pd
-import xarray # needed for time axis
 from datetime import datetime
-
-import matplotlib.pyplot as plt
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-# import awset
-# import awsmet
-from snowpacktools.snowpro import pro_helper, pro_plotter
+from snowpacktools.snowpro import pro_helper
 
 def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
     """Reads a .PRO file and returns a dictionary with timestamps as keys and values being another dictionary with
@@ -354,47 +339,6 @@ def get_smet_df(path):
     return df_smet
 
 
-def snowpro(config_file=None, pro_file=None, output_dir=None):
-    """A SNOWPACK output (.pro file) visualization tool.
-    
-    Arguments:
-        config_file (str):  Path to configuration (ini) file   
-        pro_file (str):     Path to PRO file
-    """
-
-    config = configparser.ConfigParser()
-    this_dir, this_filename = os.path.split(__file__)
-    if config_file and os.path.exists(config_file):
-        config.read(config_file)
-    else:
-        snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
-        if os.path.exists(snowpro_template_ini_path): 
-            config.read(snowpro_template_ini_path)
-        else:
-            sys.exit('[E] No configuration file available')
-            
-    latex_template_path = os.path.join(this_dir, "latex_template.mplstyle")
-    if os.path.exists(latex_template_path):
-        plt.style.use(latex_template_path)
-
-    if not output_dir:
-        output_dir = config.get('SNOWPRO','OUTPUT_DIR')
-    os.makedirs(output_dir, exist_ok=True)
-        
-    if pro_file != None:
-        config['SNOWPRO']['PRO_FILE_PATH'] = pro_file
-
-    if config.get('SNOWPRO','PLOT_SNP_EVO') =='TRUE':
-        pro_plotter.plot_snp_evo(config)
-    
-    if config.get('SNOWPRO','PLOT_PROFILE')=='TRUE':
-        pro_plotter.plot_single_profile(config)
-
-    if config.get('SNOWPRO', 'PLOT_SNP_EVO_AND_PROFILE')=='TRUE':
-        pro_plotter.plot_snp_evo(config, DATETIME_STR=config.get('SNOWPRO-PROF','DATETIME'))
-
-
-
 if __name__ == "__main__":
     """
     import debugpy
@@ -403,21 +347,5 @@ if __name__ == "__main__":
     debugpy.wait_for_client()
     print('Attached!')
     """
-    args = sys.argv[1:]
 
-    this_dir, this_filename = os.path.split(__file__)
-    snowpro_template_ini_path = os.path.join(this_dir, "snowpro.ini")
-    if len(args) > 0: 
-        if (os.path.isfile(args[0])):
-            if len(args)>1: 
-                snowpro(args[0],args[1])
-            else:
-                snowpro(args[0])
-        else:
-            name = str(args[0])
-            print('[E]   File ({}) not found.'.format(name))
-    else:
-        if os.path.exists(snowpro_template_ini_path):
-            snowpro(snowpro_template_ini_path)
-        else:
-            sys.exit('[E]   No configuration file available')
+    sys.exit('[E]   This script is not callable. Install the python package and use corresponding functions.')
