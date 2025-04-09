@@ -149,7 +149,7 @@ def SMET2df(filename, keyword='[DATA]', num_lines=None):
 
 
 #### Plot functions
-def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=None, fig=None, ax=None, label=None, title=None):
+def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=None, fig=None, ax=None, label=None, title=None, ax_title=None, lgd_loc=None):
     """ 
     Plot variables vars_to_plot from the SMET file 
 
@@ -163,6 +163,8 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
     ax : Axes : Axes object for plotting (optional)
     label : str : label for the plot (optional)
     title : str : title for the plot (optional)
+    ax_title : str : title for the axes (optional)
+    lgd_loc : str : location of the legend (optional)
     """
     # fig, ax = plt.subplots( int(len(vars_to_plot)/2),2,figsize=(7*int(len(vars_to_plot)/2),4*2))
     if not fig:
@@ -188,10 +190,13 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
                     fig.suptitle(title)
                 elif header_dict:
                     fig.suptitle(f"{header_dict['station_name'][0]} lat:{header_dict['latitude'][0]} lon:{header_dict['longitude'][0]} {header_dict['altitude'][0]}m")
-                
+                if ax_title:
+                    ax.flatten()[v].set_title(ax_title)
                     
                 # ...
-                if label:
+                if label and lgd_loc:
+                    ax.flatten()[v].legend(loc=lgd_loc)
+                elif label:
                     ax.flatten()[v].legend()
     elif len(vars_to_plot) > 1 and  ( type(ax) is not np.ndarray ) :
         sys.exit('Provide more axes for the number of variables to plot')
@@ -199,7 +204,6 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
         # for v, var in enumerate(vars_to_plot):
             var = vars_to_plot[0]
             ax.plot( smet['timestamp'], smet[var], label=label )
-            ax.set_title(var)
             ax.grid(color='gray', linestyle='--', linewidth=0.5)
             if start_date and end_date:
                 ax.set_xlim(pd.to_datetime(start_date), pd.to_datetime(end_date))
@@ -213,10 +217,12 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
                 fig.suptitle(title)
             elif header_dict:
                 fig.suptitle(f"{header_dict['station_name'][0]} lat:{header_dict['latitude'][0]} lon:{header_dict['longitude'][0]} {header_dict['altitude'][0]}m")
-            
-                
-            # ...
+            if ax_title:
+                ax.set_title(f"{ax_title} - {var}")
+            else:
+                ax.set_title(var)
             if label:
                 ax.legend()
+       
 
     plt.tight_layout()
