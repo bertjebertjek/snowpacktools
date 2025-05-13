@@ -149,7 +149,9 @@ def SMET2df(filename, keyword='[DATA]', num_lines=None):
 
 
 #### Plot functions
-def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=None, fig=None, ax=None, label=None, title=None, ax_title=None, lgd_loc=None):
+def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=None, 
+              fig=None, ax=None, label=None, title=None, ax_title=None, xlabel=None, 
+              ylabel=None, lgd_loc=None, **kwargs):
     """ 
     Plot variables vars_to_plot from the SMET file 
 
@@ -175,7 +177,7 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
             sys.exit('Provide more axes for the number of variables to plot')
         else:
             for v, var in enumerate(vars_to_plot):
-                ax.flatten()[v].plot( smet['timestamp'], smet[var], label=label ) 
+                ax.flatten()[v].plot( smet['timestamp'], smet[var], label=label ,**kwargs) 
                 ax.flatten()[v].set_title(var)
                 ax.flatten()[v].grid(color='gray', linestyle='--', linewidth=0.5)
                 if start_date and end_date:
@@ -183,16 +185,17 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
                 # rotate xtixk labels
                 ax.flatten()[v].set_xticks(ax.flatten()[v].get_xticks())
                 ax.flatten()[v].set_xticklabels(ax.flatten()[v].get_xticklabels(), rotation=45, ha='right')
+                if xlabel: ax.flatten()[v].set_xlabel( xlabel )
                 # units from the header dictionary:        
+                if ylabel: ax.flatten()[v].set_ylabel( ylabel )
                 if header_dict:
-                        ax.flatten()[v].set_ylabel( header_dict['plot_unit'][ smet.columns.get_loc(var) ]                )
+                    ax.flatten()[v].set_ylabel( header_dict['plot_unit'][ smet.columns.get_loc(var)+1 ] ) # units are off by 1.
                 if title:
                     fig.suptitle(title)
                 elif header_dict:
                     fig.suptitle(f"{header_dict['station_name'][0]} lat:{header_dict['latitude'][0]} lon:{header_dict['longitude'][0]} {header_dict['altitude'][0]}m")
                 if ax_title:
                     ax.flatten()[v].set_title(ax_title)
-                    
                 # ...
                 if label and lgd_loc:
                     ax.flatten()[v].legend(loc=lgd_loc)
@@ -203,24 +206,28 @@ def plot_vars(smet, vars_to_plot, start_date=None, end_date=None, header_dict=No
     else:  # i.e.  ( type(ax) is not np.ndarray ) so one plot, and one variable
         # for v, var in enumerate(vars_to_plot):
             var = vars_to_plot[0]
-            ax.plot( smet['timestamp'], smet[var], label=label )
+            ax.plot( smet['timestamp'], smet[var], label=label ,**kwargs)
             ax.grid(color='gray', linestyle='--', linewidth=0.5)
             if start_date and end_date:
                 ax.set_xlim(pd.to_datetime(start_date), pd.to_datetime(end_date))
             # rotate xtixk labels
             ax.set_xticks(ax.get_xticks())
             ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+            if xlabel: ax.set_xlabel(xlabel)
             # units from the header dictionary:        
-            if header_dict:
-                    ax.set_ylabel( header_dict['plot_unit'][ smet.columns.get_loc(var) ]           )
+            if ylabel: 
+                ax.set_ylabel( ylabel )
+            elif header_dict:
+                ax.set_ylabel( header_dict['plot_unit'][ smet.columns.get_loc(var) +1] ) # units are off by 1.
             if title:
                 fig.suptitle(title)
             elif header_dict:
                 fig.suptitle(f"{header_dict['station_name'][0]} lat:{header_dict['latitude'][0]} lon:{header_dict['longitude'][0]} {header_dict['altitude'][0]}m")
             if ax_title:
-                ax.set_title(f"{ax_title} - {var}")
-            else:
+                ax.set_title(f"{ax_title} ")
+            elif ax_title is None:
                 ax.set_title(var)
+ 
             if label:
                 ax.legend()
        
