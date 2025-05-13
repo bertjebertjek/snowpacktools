@@ -147,7 +147,10 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                             if var == 'grain type, grain size (mm), and density (kg m-3) of SH at surface':
                                 continue
                             elif var == 'height':
-                                profs[ts][var] = np.append(profs[ts][var], profs[ts][var][-1] + surf_hoar[1]/10) # or np.insert()
+                                try:
+                                    profs[ts][var] = np.append(profs[ts][var], profs[ts][var][-1] + surf_hoar[1]/10) # or np.insert()
+                                except: # above gives error with soil and bare ground(?)
+                                    profs[ts][var] = np.append(profs[ts][var], surf_hoar[1]/10) # or np.insert()
                             elif var == 'density':
                                 profs[ts][var] = np.append(profs[ts][var], surf_hoar[2])
                             elif var == 'grain size (mm)':
