@@ -72,7 +72,11 @@ def read_pro(path,res='1h',keep_soil=False, consider_surface_hoar=True):
                     except:
                         profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype=float)
                 else:
-                    profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype=float)
+                    try:
+                        profs[ts][PRO_CODE_DICT[line[:4]]] = np.array(line.strip().split(',')[2:],dtype=float)
+                    except:
+                        print('[E]  Error while reading variable', line[:4],' at ', ts , 'in .PRO file.')
+                        # exit(1)
 
         elif section=='[HEADER]':
             if line == '[DATA]':
